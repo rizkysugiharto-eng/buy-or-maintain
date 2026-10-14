@@ -278,8 +278,10 @@ export default function GuidePage() {
         <details className="faq">
           <summary>Angkanya bisa dipegang?</summary>
           <p>
-            Belum semuanya. Buka <b>Data & Asumsi → Sumber angka</b>: di sana tertulis asal setiap angka dan sumber resmi untuk
-            memastikannya (ZNT BPN, KJPP, HSPK Kota Malang, RAB kontraktor, mutasi rekening). Tandai “Sudah dicek” satu per satu; Ringkasan
+            Belum semuanya. Angka yang berbeda tiap properti (harga, luas, sewa, harga tanah, biaya rutin, surat-surat, pajak) dicek di halaman
+            properti → <b>Cek sumber angka</b>. Angka yang berlaku untuk semua (biaya bangun, paket material, asumsi keluarga) dicek di{' '}
+            <b>Data & Asumsi → Sumber angka</b>. Di sana tertulis asal setiap angka dan sumber resmi untuk memastikannya (ZNT BPN, KJPP, Perwal
+            Kota Malang, RAB kontraktor, mutasi rekening). Ganti angkanya dulu, lalu tandai “Sudah dicek”; Ringkasan dan kartu tiap properti
             menampilkan berapa yang sudah dicek. Sebelum DP: cek surat-surat lewat notaris/PPAT dan minta tukang/insinyur memeriksa bangunan.
           </p>
         </details>

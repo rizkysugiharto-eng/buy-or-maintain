@@ -11,7 +11,7 @@ import { primaryRow, useData } from '../context/DataContext.jsx';
 import { planTypesFor, reportCard, saleProceeds } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 import { rowLabel, shortName } from '../lib/labels.js';
-import { SOURCES, checkedCount } from '../data/sources.js';
+import { propertySourceProgress, sourceProgress } from '../data/sources.js';
 import { regionRules } from '../data/regions.js';
 
 function Stat({ label, value, sub }) {
@@ -85,6 +85,7 @@ export default function Home() {
     );
   }
 
+  const progress = sourceProgress(data);
   const colorOf = (property) => properties.findIndex((p) => p.id === property.id);
   // Rencana yang sewanya belum diisi tidak ikut dibandingkan
   const cards = properties.map((property) => {
@@ -138,12 +139,12 @@ export default function Home() {
         Baru pertama kali? Baca <Link to="/cara-pakai">Cara Pakai</Link> — alur pengisian dan cara membaca angkanya.
       </p>
 
-      <p className={`source-hint${checkedCount(data.sources) === SOURCES.length ? ' done' : ''}`}>
+      <p className={`source-hint${progress.done === progress.total ? ' done' : ''}`}>
         <b>
-          {checkedCount(data.sources)} dari {SOURCES.length} angka
+          {progress.done} dari {progress.total} angka
         </b>{' '}
         sudah dicek dari sumber resmi.{' '}
-        {checkedCount(data.sources) < SOURCES.length && 'Sisanya masih perkiraan — pakai hasil ini untuk menyaring, bukan dasar membayar DP. '}
+        {progress.done < progress.total && 'Sisanya masih perkiraan — pakai hasil ini untuk menyaring, bukan dasar membayar DP. '}
         <Link to="/pengaturan?bagian=sumber">Lihat sumber angka</Link>
       </p>
 
@@ -210,8 +211,13 @@ export default function Home() {
             ) : (
               <p className="muted">{incomplete ? 'Sewa di rencananya belum diisi.' : 'Belum ada rencana.'}</p>
             )}
-            <span className="card-link">
-              Lihat detail <Icon name="chevron" size={14} />
+            <span className="card-foot">
+              <span className="small muted">
+                Sumber angka {propertySourceProgress(property).done}/{propertySourceProgress(property).total} dicek
+              </span>
+              <span className="card-link">
+                Lihat detail <Icon name="chevron" size={14} />
+              </span>
             </span>
           </Link>
         ))}

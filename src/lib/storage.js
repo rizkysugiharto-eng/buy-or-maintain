@@ -3,6 +3,7 @@
 // dan dibagikan lewat link (data ada di bagian "#" link, yang tidak dikirim ke server)
 // atau lewat file .json.
 
+import { migrateSources } from '../data/sources.js';
 import { DEFAULT_SETTINGS } from './calc.js';
 import { DATA_VERSION, EXAMPLE_MATERIALS } from '../data/example.js';
 
@@ -24,7 +25,8 @@ const OLD_TITLES = /^pilihan kos malang/i;
 export const GENERAL_TITLE = 'Rencana properti keluarga';
 
 // Lengkapi pengaturan yang belum ada (mis. data dari versi lama)
-export function normalizeData(data) {
+export function normalizeData(input) {
+  const data = migrateSources(input);
   return {
     ...data,
     ...(OLD_TITLES.test(data.title ?? '') && { title: GENERAL_TITLE }),

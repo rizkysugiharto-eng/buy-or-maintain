@@ -6,6 +6,7 @@ import Icon from '../components/Icon.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { reportCard } from '../lib/calc.js';
 import { regionRules } from '../data/regions.js';
+import { propertySourceProgress } from '../data/sources.js';
 import { formatCompact, formatNumber, formatYears } from '../lib/format.js';
 
 export default function Properties() {
@@ -43,6 +44,7 @@ export default function Properties() {
                   {property.landArea ? ` · tanah ${formatNumber(property.landArea)} m²` : ''}
                   {` · ${planCount} rencana`}
                   {row && !row.result.incomplete ? ` · modal kembali ${formatYears(row.result.paybackYears, data.settings.maxYears)}` : ''}
+                  {` · sumber angka ${propertySourceProgress(property).done}/${propertySourceProgress(property).total} dicek`}
                 </p>
               </div>
               {verdict && <RatingBadge rating={verdict.level}>{verdict.label}</RatingBadge>}

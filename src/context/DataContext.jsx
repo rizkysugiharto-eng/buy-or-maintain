@@ -90,6 +90,13 @@ export function DataProvider({ children }) {
       updateMaterial: (id, patch) => patchList('materials', id, patch),
       updateSettings: (patch) => setData((d) => ({ ...d, settings: { ...d.settings, ...patch } })),
       updateSource: (key, patch) => setData((d) => ({ ...d, sources: { ...d.sources, [key]: { ...d.sources?.[key], ...patch } } })),
+      updatePropertySource: (propertyId, key, patch) =>
+        setData((d) => ({
+          ...d,
+          properties: d.properties.map((p) =>
+            p.id === propertyId ? { ...p, sources: { ...p.sources, [key]: { ...p.sources?.[key], ...patch } } } : p,
+          ),
+        })),
       setTitle: (title) => setData((d) => ({ ...d, title })),
 
       addProperty: () => {

@@ -1909,3 +1909,30 @@ a {
 .sale-box p {
   margin: 4px 0 0;
 }
+
+.card-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.card-foot .card-link {
+  margin-top: 0;
+}
+
+/* Data & Asumsi → kemajuan cek sumber angka tiap properti */
+.source-props {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 16px;
+  display: grid;
+  gap: 6px;
+}
+.source-props li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}

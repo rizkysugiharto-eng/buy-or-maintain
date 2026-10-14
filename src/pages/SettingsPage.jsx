@@ -1,13 +1,14 @@
 // Data & asumsi: bagikan, simpan/buka file, unduh tabel Excel, dan asumsi hitungan.
 
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ShareDialog } from '../components/Layout.jsx';
 import { MoneyField, NumberField, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
+import SourceItem from '../components/SourceItem.jsx';
 import { useData } from '../context/DataContext.jsx';
 import { exampleData } from '../data/example.js';
-import { SOURCES, checkedCount } from '../data/sources.js';
+import { GENERAL_SOURCES, propertySourceProgress, sourceProgress } from '../data/sources.js';
 import { formatCompact, formatNumber } from '../lib/format.js';
 import { DEFAULT_SETTINGS } from '../lib/calc.js';
 import { downloadFile, readJsonFile } from '../lib/storage.js';
@@ -73,84 +74,46 @@ function ScenarioFields({ label, value, onChange, note }) {
 function SourcesSection() {
   const { data, updateSource } = useData();
   const sources = data.sources ?? {};
-  const done = checkedCount(sources);
+  const { done, total } = sourceProgress(data);
   return (
     <section className="card" id="sumber-angka">
       <h2>Sumber angka</h2>
       <p className="muted">
-        Dari mana setiap angka berasal, dan sumber resmi untuk memastikannya. Tandai <b>Sudah dicek</b> setelah angkanya diganti dengan data
-        yang bisa dipegang, dan tulis buktinya di catatan.
+        Dari mana setiap angka berasal, dan sumber resmi untuk memastikannya. Tandai <b>Sudah dicek</b> setelah angkanya diganti dengan data yang bisa
+        dipegang, dan tulis buktinya di catatan.
       </p>
-      <div className="source-progress" aria-label={`${done} dari ${SOURCES.length} sudah dicek`}>
+      <div className="source-progress" aria-label={`${done} dari ${total} sudah dicek`}>
         <div className="source-bar">
-          <span style={{ width: `${(done / SOURCES.length) * 100}%` }} />
+          <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
         </div>
         <strong>
-          {done} dari {SOURCES.length} sudah dicek
+          {done} dari {total} sudah dicek
         </strong>
       </div>
-      <div className="source-list">
-        {SOURCES.map((src) => {
-          const state = sources[src.key] ?? {};
-          const checked = state.status === 'dicek';
+
+      <h3>Angka tiap properti</h3>
+      <p className="small muted">
+        Harga, luas, sewa, harga tanah, biaya rutin, surat-surat & pajak berbeda tiap properti — dicek di halaman propertinya.
+      </p>
+      <ul className="source-props">
+        {data.properties.map((p) => {
+          const prog = propertySourceProgress(p);
           return (
-            <div key={src.key} className={`source-item${checked ? ' checked' : ''}`}>
-              <div className="source-head">
-                <h3>{src.label}</h3>
-                <div className="segmented source-status" role="group" aria-label={`Status ${src.label}`}>
-                  <button type="button" className={`seg${!checked ? ' active' : ''}`} aria-pressed={!checked} onClick={() => updateSource(src.key, { status: 'perkiraan' })}>
-                    Perkiraan
-                  </button>
-                  <button
-                    type="button"
-                    className={`seg rating-baik${checked ? ' active' : ''}`}
-                    aria-pressed={checked}
-                    onClick={() => updateSource(src.key, { status: 'dicek' })}
-                  >
-                    Sudah dicek
-                  </button>
-                </div>
-              </div>
-              <dl className="source-meta">
-                <dt>Dipakai di</dt>
-                <dd>{src.usedIn}</dd>
-                <dt>Sumber sekarang</dt>
-                <dd>{src.now}</dd>
-                <dt>Cara memastikan</dt>
-                <dd>{src.verify}</dd>
-              </dl>
-              <details className="source-how">
-                <summary>Cara dapetin angkanya</summary>
-                <ol>
-                  {src.how.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-                <p className="small">
-                  <b>Masukkan di:</b> {src.where}
-                </p>
-                {src.links?.length > 0 && (
-                  <ul className="source-links small">
-                    {src.links.map((l) => (
-                      <li key={l.url}>
-                        <a href={l.url} target="_blank" rel="noopener noreferrer">
-                          {l.label} ↗
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </details>
-              <TextField
-                label="Catatan / bukti"
-                value={state.note}
-                onChange={(note) => updateSource(src.key, { note })}
-                placeholder="Misal: RAB CV Maju Jaya, 20 Okt 2026 — Rp4,6 jt/m²"
-                wide
-              />
-            </div>
+            <li key={p.id}>
+              <Link to={`/properti/${p.id}?bagian=sumber`}>{p.name}</Link>
+              <span className={`badge ${prog.done === prog.total ? 'rating-baik' : 'rating-cukup'}`}>
+                {prog.done}/{prog.total} dicek
+              </span>
+            </li>
           );
         })}
+      </ul>
+
+      <h3>Angka yang berlaku untuk semua properti</h3>
+      <div className="source-list">
+        {GENERAL_SOURCES.map((src) => (
+          <SourceItem key={src.key} src={src} state={sources[src.key]} onChange={(patch) => updateSource(src.key, patch)} />
+        ))}
       </div>
     </section>
   );
@@ -195,7 +158,20 @@ export default function SettingsPage() {
   }
 
   function exportCsv() {
-    const header = ['Properti', 'Rencana', 'Material', 'Harga beli', 'Total modal', 'Biaya bangun/renovasi', 'Uang bersih per bulan', 'Hasil bersih %/tahun', 'Modal kembali (tahun)', 'Mulai dapat uang (bulan)', 'Kamar', 'Sewa per kamar'];
+    const header = [
+      'Properti',
+      'Rencana',
+      'Material',
+      'Harga beli',
+      'Total modal',
+      'Biaya bangun/renovasi',
+      'Uang bersih per bulan',
+      'Hasil bersih %/tahun',
+      'Modal kembali (tahun)',
+      'Mulai dapat uang (bulan)',
+      'Kamar',
+      'Sewa per kamar',
+    ];
     const lines = analysis.rows.map((r) =>
       [
         r.property.name,
@@ -270,13 +246,41 @@ export default function SettingsPage() {
         <h2>Asumsi hitungan</h2>
         <p className="muted">Berlaku untuk semua properti. Angka bawaan mengikuti laporan analisis.</p>
         <div className="form-grid">
-          <MoneyField label="Dana yang disiapkan keluarga" value={s.budget} onChange={set('budget')} help="Modal di atas ini dinilai Cukup/Kurang di rapor" allowEmpty={false} />
+          <MoneyField
+            label="Dana yang disiapkan keluarga"
+            value={s.budget}
+            onChange={set('budget')}
+            help="Modal di atas ini dinilai Cukup/Kurang di rapor"
+            allowEmpty={false}
+          />
           <TextField label="Mulai hitung dari bulan" value={s.startMonth} onChange={set('startMonth')} help="Format TAHUN-BULAN, misal 2026-11" />
-          <NumberField label="Hasil bersih yang dianggap layak (minimal)" unit="%/tahun" value={s.targetYieldLow} onChange={set('targetYieldLow')} min={0.1} max={50} />
-          <NumberField label="Hasil bersih yang dianggap layak (ideal)" unit="%/tahun" value={s.targetYieldHigh} onChange={set('targetYieldHigh')} min={0.1} max={50} />
+          <NumberField
+            label="Hasil bersih yang dianggap layak (minimal)"
+            unit="%/tahun"
+            value={s.targetYieldLow}
+            onChange={set('targetYieldLow')}
+            min={0.1}
+            max={50}
+          />
+          <NumberField
+            label="Hasil bersih yang dianggap layak (ideal)"
+            unit="%/tahun"
+            value={s.targetYieldHigh}
+            onChange={set('targetYieldHigh')}
+            min={0.1}
+            max={50}
+          />
           <NumberField label="Balik modal dinilai Baik kalau ≤" unit="tahun" value={s.paybackGood} onChange={set('paybackGood')} min={1} max={60} />
           <NumberField label="Balik modal dinilai Cukup kalau ≤" unit="tahun" value={s.paybackOk} onChange={set('paybackOk')} min={1} max={60} />
-          <NumberField label="Kenaikan sewa per tahun" unit="%" value={s.rentGrowthPct} onChange={set('rentGrowthPct')} help="0 = sewa dianggap tetap (seperti di laporan)" min={-20} max={30} />
+          <NumberField
+            label="Kenaikan sewa per tahun"
+            unit="%"
+            value={s.rentGrowthPct}
+            onChange={set('rentGrowthPct')}
+            help="0 = sewa dianggap tetap (seperti di laporan)"
+            min={-20}
+            max={30}
+          />
           <NumberField label="Kenaikan biaya rutin per tahun" unit="%" value={s.costGrowthPct} onChange={set('costGrowthPct')} min={-20} max={30} />
           <NumberField label="Panjang grafik perjalanan uang" unit="tahun" value={s.chartYears} onChange={set('chartYears')} min={5} max={60} />
         </div>
@@ -331,7 +335,15 @@ export default function SettingsPage() {
           properti “Daerah lain”. Honor PPAT & biaya BPN berlaku untuk semua daerah.
         </p>
         <div className="form-grid">
-          <NumberField label="BPHTB" unit="%" value={s.bphtbPct} onChange={set('bphtbPct')} help="Untuk “Daerah lain”. Batas maksimal nasional 5% (UU HKPD)" min={0} max={10} />
+          <NumberField
+            label="BPHTB"
+            unit="%"
+            value={s.bphtbPct}
+            onChange={set('bphtbPct')}
+            help="Untuk “Daerah lain”. Batas maksimal nasional 5% (UU HKPD)"
+            min={0}
+            max={10}
+          />
           <MoneyField
             label="Batas tidak kena BPHTB (NPOPTKP)"
             value={s.npoptkp}
@@ -339,8 +351,24 @@ export default function SettingsPage() {
             help="Untuk “Daerah lain”. Batas minimal nasional Rp80 jt (UU HKPD)"
             allowEmpty={false}
           />
-          <NumberField label="Honor notaris/PPAT (maksimal)" unit="%" value={s.ppatPct} onChange={set('ppatPct')} help="Batas atas PP No. 24/2016: 1% harga transaksi" min={0} max={5} />
-          <NumberField label="Balik nama di BPN" unit="‰ harga" value={s.bpnPermil} onChange={set('bpnPermil')} help="± harga ÷ 1.000 + Rp50 rb" min={0} max={10} />
+          <NumberField
+            label="Honor notaris/PPAT (maksimal)"
+            unit="%"
+            value={s.ppatPct}
+            onChange={set('ppatPct')}
+            help="Batas atas PP No. 24/2016: 1% harga transaksi"
+            min={0}
+            max={5}
+          />
+          <NumberField
+            label="Balik nama di BPN"
+            unit="‰ harga"
+            value={s.bpnPermil}
+            onChange={set('bpnPermil')}
+            help="± harga ÷ 1.000 + Rp50 rb"
+            min={0}
+            max={10}
+          />
         </div>
         <ScenarioFields
           label="Keadaan pesimis"
@@ -364,7 +392,11 @@ export default function SettingsPage() {
       <section className="card">
         <h2>Mulai ulang</h2>
         <div className="btn-row">
-          <button type="button" className="btn" onClick={() => window.confirm('Ganti semua data dengan data contoh?') && replaceData(exampleData(), 'Data contoh dimuat.')}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => window.confirm('Ganti semua data dengan data contoh?') && replaceData(exampleData(), 'Data contoh dimuat.')}
+          >
             Muat data contoh
           </button>
           <button type="button" className="btn danger" onClick={() => window.confirm('Kosongkan semua properti & rencana?') && clearAll()}>

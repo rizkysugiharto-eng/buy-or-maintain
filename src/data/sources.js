@@ -1,5 +1,6 @@
 // Daftar angka yang dipakai hitungan: dari mana asalnya sekarang, dan sumber resmi
-// untuk memastikannya. Statusnya (perkiraan / sudah dicek) diisi keluarga di menu Data & Asumsi.
+// untuk memastikannya. Angka yang berbeda tiap properti (scope 'properti') dicek di halaman
+// masing-masing properti; sisanya berlaku untuk semua dan dicek di menu Data & Asumsi.
 
 import { SHS_SOURCE } from './shs.js';
 
@@ -8,6 +9,7 @@ const SHS_LINK = { label: SHS_SOURCE.label, url: SHS_SOURCE.url };
 export const SOURCES = [
   {
     key: 'data-penjual',
+    scope: 'properti',
     label: 'Harga jual, luas tanah & bangunan, jumlah kamar',
     usedIn: 'Data properti',
     now: 'Keterangan penjual / iklan',
@@ -22,6 +24,7 @@ export const SOURCES = [
   },
   {
     key: 'sewa-sekarang',
+    scope: 'properti',
     label: 'Sewa & keterisian kos yang dijual',
     usedIn: 'Rencana beli jadi',
     now: 'Klaim penjual (mis. “penuh, rata-rata Rp1,7 jt”)',
@@ -36,6 +39,7 @@ export const SOURCES = [
   },
   {
     key: 'harga-tanah',
+    scope: 'properti',
     label: 'Harga tanah sekitar per m²',
     usedIn: 'Harga wajar',
     now: 'Iklan 2026 (99.co, Rumah123, Lamudi): jalan Soekarno-Hatta Rp9,5–13,5 jt/m², jalan dalam Mojolangu ±Rp7 jt/m², sekitar Jatimulyo Rp5–9,3 jt/m². Harga penawaran, bukan transaksi',
@@ -54,6 +58,7 @@ export const SOURCES = [
   },
   {
     key: 'nilai-wajar',
+    scope: 'properti',
     label: 'Nilai wajar properti',
     usedIn: 'Harga wajar & rapor',
     now: 'Hitungan aplikasi (nilai tanah + bangunan, dan dari uang sewa)',
@@ -65,12 +70,11 @@ export const SOURCES = [
       'Kalau beli dengan KPR, bank biasanya menilai sendiri; minta hasil nilai taksirannya.',
       'Pakai nilai dari laporan sebagai pembanding harga yang diminta penjual.',
     ],
-    links: [
-      { label: 'MAPPI — Masyarakat Profesi Penilai Indonesia', url: 'https://mappi.or.id' },
-    ],
+    links: [{ label: 'MAPPI — Masyarakat Profesi Penilai Indonesia', url: 'https://mappi.or.id' }],
   },
   {
     key: 'sewa-pasar',
+    scope: 'properti',
     label: 'Sewa pasar kos di sekitar',
     usedIn: 'Rencana renovasi & bangun',
     now: 'Iklan 99.co & Pinhome (Okt 2026): kos AC + kamar mandi dalam di Lowokwaru Rp1,3–1,9 jt/bulan. Sawojajar: belum ada data — wajib survei',
@@ -103,7 +107,10 @@ export const SOURCES = [
     links: [
       { label: 'Pergub Jatim 34/2022 (HSBGN Kota Malang)', url: 'https://dokumjdih.jatimprov.go.id/upload/45172/2022PERGUBJATIM034.pdf' },
       SHS_LINK,
-      { label: 'detikProperti — estimasi biaya bangun kos 2026', url: 'https://www.detik.com/properti/berita/d-8341751/mau-bangun-kos-kosan-segini-estimasi-biaya-bangunnya-di-2026' },
+      {
+        label: 'detikProperti — estimasi biaya bangun kos 2026',
+        url: 'https://www.detik.com/properti/berita/d-8341751/mau-bangun-kos-kosan-segini-estimasi-biaya-bangunnya-di-2026',
+      },
     ],
   },
   {
@@ -120,7 +127,10 @@ export const SOURCES = [
       'Acuan cara hitung resmi: AHSP Permen PUPR No. 1/2022.',
     ],
     links: [
-      { label: 'Kepmen PUPR 943/2024 — komponen biaya bangunan gedung negara', url: 'https://jdih.pu.go.id/internal/assets/assets/produk/KepmenPUPR/2024/05/2024kmpupr943.pdf' },
+      {
+        label: 'Kepmen PUPR 943/2024 — komponen biaya bangunan gedung negara',
+        url: 'https://jdih.pu.go.id/internal/assets/assets/produk/KepmenPUPR/2024/05/2024kmpupr943.pdf',
+      },
       SHS_LINK,
     ],
   },
@@ -139,6 +149,7 @@ export const SOURCES = [
   },
   {
     key: 'biaya-rutin',
+    scope: 'properti',
     label: 'Biaya rutin: air, listrik bersama, wifi, penjaga, perawatan, PBB',
     usedIn: 'Semua rencana',
     now: 'Asumsi di laporan (Rp1 jt + Rp0,21 jt/kamar/bulan, perawatan 6%). Batas atas perawatan: Pemkot Malang menganggarkan Rp170 rb (1 lantai) / Rp196 rb (bertingkat) per m² per tahun untuk gedung kantornya (Perwal 14/2025). Inflasi Kota Malang Jan 2026: 3,33%/tahun (BPS) — bisa dipakai untuk “kenaikan biaya rutin”',
@@ -152,11 +163,15 @@ export const SOURCES = [
     ],
     links: [
       SHS_LINK,
-      { label: 'BPS Kota Malang — inflasi Januari 2026', url: 'https://malangkota.bps.go.id/en/pressrelease/2026/02/02/409/on-january-2026--year-on-year-inflation-malang-municipality-is-3-33-percent.html' },
+      {
+        label: 'BPS Kota Malang — inflasi Januari 2026',
+        url: 'https://malangkota.bps.go.id/en/pressrelease/2026/02/02/409/on-january-2026--year-on-year-inflation-malang-municipality-is-3-33-percent.html',
+      },
     ],
   },
   {
     key: 'surat-surat',
+    scope: 'properti',
     label: 'Biaya surat-surat pembeli',
     usedIn: 'Semua rencana',
     now: 'Dihitung otomatis sesuai Kota/Kabupaten properti. Kota Malang: BPHTB 5% × (harga − Rp80 jt) (Perda No. 4/2023); Kab. Malang sama (Perda 7/2023); Kab. Blitar tarif 5% (Perda 8/2023); Kota Blitar memakai batas nasional. Ditambah honor PPAT maks. 1% (PP No. 24/2016) + balik nama BPN ± harga/1000 + Rp50 rb. Untuk Rp3,2 M ≈ 6,0%',
@@ -169,11 +184,15 @@ export const SOURCES = [
     ],
     links: [
       { label: 'Perda Kota Malang No. 4/2023 (pajak daerah)', url: 'https://pasal.id/peraturan/perda/perda-kota-malang-4-2023' },
-      { label: 'Hukumonline — batas honor PPAT 1%', url: 'https://www.hukumonline.com/klinik/a/laporkan-ke-sini-jika-lurah-minta-komisi-lebih-untuk-ajb-lt610fee86e2c55' },
+      {
+        label: 'Hukumonline — batas honor PPAT 1%',
+        url: 'https://www.hukumonline.com/klinik/a/laporkan-ke-sini-jika-lurah-minta-komisi-lebih-untuk-ajb-lt610fee86e2c55',
+      },
     ],
   },
   {
     key: 'pajak-sewa',
+    scope: 'properti',
     label: 'Pajak usaha kos',
     usedIn: 'Pengaturan lanjutan rencana',
     now: 'Kos TIDAK kena PPh final sewa 10% (kos = jasa penginapan, ditegaskan DJP). Pemilik perorangan: PPh UMKM 0,5% hanya atas omzet di atas Rp500 jt/tahun, maks. 7 tahun (PP 55/2022) → ketiga kos di sini Rp0. Pajak daerah kos di Kota Malang sudah tidak dipungut sejak UU HKPD (Pemkot, Juni 2025), tapi Pemkot berharap bisa memungut lagi',
@@ -186,9 +205,18 @@ export const SOURCES = [
       'Pantau kabar Pemkot Malang soal pajak daerah kos — kalau dipungut lagi, masukkan sebagai persen sewa.',
     ],
     links: [
-      { label: 'Pemkot Malang — rumah kos tak lagi kena pajak daerah', url: 'https://malangkota.go.id/2025/06/10/uu-hkpd-berlaku-rumah-kos-tak-lagi-kena-pajak-daerah/' },
-      { label: 'DDTC — omzet Rp500 jt tidak kena pajak (PP 55/2022)', url: 'https://news.ddtc.co.id/pp-55-2022-pemerintah-atur-batas-omzet-rp500-juta-tidak-kena-pajak-44453' },
-      { label: 'DDTC — Pemkot berharap kos kembali jadi objek pajak', url: 'https://news.ddtc.co.id/berita/daerah/1811361/potensi-besar-pemkot-harap-usaha-kos-kembali-jadi-objek-pajak' },
+      {
+        label: 'Pemkot Malang — rumah kos tak lagi kena pajak daerah',
+        url: 'https://malangkota.go.id/2025/06/10/uu-hkpd-berlaku-rumah-kos-tak-lagi-kena-pajak-daerah/',
+      },
+      {
+        label: 'DDTC — omzet Rp500 jt tidak kena pajak (PP 55/2022)',
+        url: 'https://news.ddtc.co.id/pp-55-2022-pemerintah-atur-batas-omzet-rp500-juta-tidak-kena-pajak-44453',
+      },
+      {
+        label: 'DDTC — Pemkot berharap kos kembali jadi objek pajak',
+        url: 'https://news.ddtc.co.id/berita/daerah/1811361/potensi-besar-pemkot-harap-usaha-kos-kembali-jadi-objek-pajak',
+      },
     ],
   },
   {
@@ -204,14 +232,72 @@ export const SOURCES = [
       'Sepakati batas balik modal yang masih bisa diterima (mis. 18 tahun) dan seberapa pesimis skenario ujinya.',
     ],
     links: [
-      { label: 'Kontan — LPS tahan bunga penjaminan 3,75%', url: 'https://keuangan.kontan.co.id/news/lps-pertahankan-tingkat-bunga-penjaminan-375-hingga-januari-2027' },
-      { label: 'Bisnis — SR025 kupon 6,8–6,9%', url: 'https://market.bisnis.com/read/20260821/92/1997963/sbn-syariah-sr025-rilis-cek-imbal-hasil-jadwal-cara-belinya' },
+      {
+        label: 'Kontan — LPS tahan bunga penjaminan 3,75%',
+        url: 'https://keuangan.kontan.co.id/news/lps-pertahankan-tingkat-bunga-penjaminan-375-hingga-januari-2027',
+      },
+      {
+        label: 'Bisnis — SR025 kupon 6,8–6,9%',
+        url: 'https://market.bisnis.com/read/20260821/92/1997963/sbn-syariah-sr025-rilis-cek-imbal-hasil-jadwal-cara-belinya',
+      },
     ],
   },
 ];
 
-export const checkedCount = (sources = {}) => SOURCES.filter((s) => sources[s.key]?.status === 'dicek').length;
+export const GENERAL_SOURCES = SOURCES.filter((s) => s.scope !== 'properti');
+
+// Judul yang lebih pas untuk properti milik keluarga (tidak ada penjual)
+const OWNED_LABELS = {
+  'data-penjual': 'Perkiraan harga jual, luas tanah & bangunan',
+  'sewa-sekarang': 'Sewa sekarang (kalau sudah ada penyewa)',
+  'sewa-pasar': 'Sewa pasar di sekitar (rumah, lahan, kos, gudang)',
+};
+
+// Angka yang dicek per properti; biaya surat-surat pembeli tidak berlaku untuk properti milik keluarga
+export const propertySources = (property) =>
+  SOURCES.filter((s) => s.scope === 'properti' && !(property?.owned && s.key === 'surat-surat')).map((s) =>
+    property?.owned && OWNED_LABELS[s.key] ? { ...s, label: OWNED_LABELS[s.key] } : s,
+  );
+
+const isChecked = (sources, key) => sources?.[key]?.status === 'dicek';
+
+export const checkedCount = (sources = {}, list = GENERAL_SOURCES) => list.filter((s) => isChecked(sources, s.key)).length;
+
+/** Kemajuan pengecekan satu properti. */
+export function propertySourceProgress(property) {
+  const list = propertySources(property);
+  return { done: checkedCount(property?.sources, list), total: list.length };
+}
+
+/** Kemajuan pengecekan seluruh data: angka umum + angka tiap properti. */
+export function sourceProgress(data) {
+  let done = checkedCount(data.sources, GENERAL_SOURCES);
+  let total = GENERAL_SOURCES.length;
+  for (const p of data.properties ?? []) {
+    const prog = propertySourceProgress(p);
+    done += prog.done;
+    total += prog.total;
+  }
+  return { done, total };
+}
+
+// Data lama menyimpan status semua angka di satu tempat: status angka per properti dipindah ke tiap properti
+export function migrateSources(data) {
+  const global = data.sources ?? {};
+  const moved = SOURCES.filter((s) => s.scope === 'properti' && global[s.key]).map((s) => s.key);
+  if (!moved.length) return data;
+  const sources = { ...global };
+  for (const key of moved) delete sources[key];
+  return {
+    ...data,
+    sources,
+    properties: (data.properties ?? []).map((p) => {
+      const own = { ...p.sources };
+      for (const key of moved) own[key] ??= global[key];
+      return { ...p, sources: own };
+    }),
+  };
+}
 
 // Harga paket material dianggap "angka contoh" sampai biaya bangun & komponennya ditandai sudah dicek
-export const materialPricesVerified = (sources = {}) =>
-  ['biaya-bangun', 'komponen-material'].every((key) => sources[key]?.status === 'dicek');
+export const materialPricesVerified = (sources = {}) => ['biaya-bangun', 'komponen-material'].every((key) => sources[key]?.status === 'dicek');

@@ -33,13 +33,15 @@ describe('link bagikan', () => {
     data.plans[1].materialIds.push('mat-baru');
     data.settings.budget = 5_000_000_000;
     data.properties[0].checklist = { shm: true };
-    data.sources = { 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } };
+    data.sources = { 'biaya-bangun': { status: 'dicek', note: 'RAB CV X' } };
+    data.properties[0].sources = { 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } };
     const opened = await decodeShare(await encodeShare(data));
     expect(results(opened)).toEqual(results(data));
     expect(opened.materials.map((m) => m.name)).toContain('Hebel A');
     expect(opened.settings.budget).toBe(5_000_000_000);
     expect(opened.properties[0].checklist).toEqual({ shm: true });
-    expect(opened.sources).toEqual({ 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } });
+    expect(opened.sources).toEqual({ 'biaya-bangun': { status: 'dicek', note: 'RAB CV X' } });
+    expect(opened.properties[0].sources).toEqual({ 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } });
   });
 
   it('link data contoh pendek (< 1.600 karakter)', async () => {
@@ -88,5 +90,28 @@ describe('tambah dari file', () => {
     expect(plan.propertyId).toBe(added1.id);
     expect(plan.id).not.toBe(current.plans[0].id);
     expect(added1.primaryPlanId).toBe(plan.id);
+  });
+});
+
+describe('sumber angka per properti', () => {
+  it('status lama angka per properti dipindah ke tiap properti', async () => {
+    const { normalizeData } = await import('./storage.js');
+    const { sourceProgress } = await import('../data/sources.js');
+    const data = exampleData();
+    data.sources = { 'harga-tanah': { status: 'dicek', note: 'ZNT' }, 'biaya-bangun': { status: 'dicek' } };
+    data.properties[1].sources = { 'harga-tanah': { status: 'perkiraan', note: 'belum' } };
+    const out = normalizeData(data);
+    expect(out.sources).toEqual({ 'biaya-bangun': { status: 'dicek' } });
+    expect(out.properties[0].sources['harga-tanah']).toEqual({ status: 'dicek', note: 'ZNT' });
+    expect(out.properties[1].sources['harga-tanah']).toEqual({ status: 'perkiraan', note: 'belum' }); // isian properti tidak ditimpa
+    const prog = sourceProgress(out);
+    expect(prog.done).toBe(1 + 2); // biaya-bangun + harga-tanah di Contoh 1 & 3
+    expect(prog.total).toBe(4 + 3 * 8);
+  });
+
+  it('properti milik keluarga tidak perlu cek biaya surat-surat pembeli', async () => {
+    const { propertySources } = await import('../data/sources.js');
+    expect(propertySources({ owned: true }).map((s) => s.key)).not.toContain('surat-surat');
+    expect(propertySources({}).map((s) => s.key)).toContain('surat-surat');
   });
 });

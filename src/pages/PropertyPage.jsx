@@ -1,11 +1,14 @@
 // Detail satu properti: data, rencana-rencananya, penilaian, harga wajar, dan daftar cek sebelum DP.
 
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { MoneyField, NumberField, RatingBadge, RatingPicker, Segmented, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import RegionRules from '../components/RegionRules.jsx';
+import SourceItem from '../components/SourceItem.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { CHECKLIST } from '../data/example.js';
+import { propertySourceProgress, propertySources } from '../data/sources.js';
 import { costApproach, incomeApproach, planTypesFor, reportCard, saleProceeds } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears } from '../lib/format.js';
 
@@ -22,8 +25,17 @@ function Range({ label, range, help }) {
 export default function PropertyPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, analysis, updateProperty, deleteProperty, addPlan, duplicatePlan, deletePlan } = useData();
+  const { data, analysis, updateProperty, updatePropertySource, deleteProperty, addPlan, duplicatePlan, deletePlan } = useData();
   const property = data.properties.find((p) => p.id === id);
+  const [params] = useSearchParams();
+
+  // Dari Data & Asumsi → Sumber angka: langsung ke bagian cek sumber
+  // (ditunda sebentar: kerangka halaman menggulir ke atas setiap pindah menu)
+  useEffect(() => {
+    if (params.get('bagian') !== 'sumber') return undefined;
+    const timer = setTimeout(() => document.getElementById('cek-sumber')?.scrollIntoView({ block: 'start' }), 50);
+    return () => clearTimeout(timer);
+  }, [params]);
 
   if (!property) {
     return (
@@ -47,6 +59,7 @@ export default function PropertyPage() {
   const owned = !!property.owned;
   const types = planTypesFor(property);
   const sale = owned ? saleProceeds(property, data.settings) : null;
+  const sourceProg = propertySourceProgress(property);
 
   function remove() {
     if (window.confirm(`Hapus "${property.name}" beserta semua rencananya?`)) {
@@ -329,9 +342,33 @@ export default function PropertyPage() {
         </section>
       )}
 
+      <section className="card" id="cek-sumber">
+        <h2>
+          <span className="step">{owned ? 5 : 6}</span> Cek sumber angka{' '}
+          <span className="small muted">
+            ({sourceProg.done}/{sourceProg.total} sudah dicek)
+          </span>
+        </h2>
+        <p className="muted">
+          Angka properti ini yang perlu dipastikan. Ganti angkanya di tempat yang disebut “Masukkan di”, lalu tandai <b>Sudah dicek</b> dan tulis
+          buktinya.
+        </p>
+        <div className="source-list">
+          {propertySources(property).map((src) => (
+            <SourceItem
+              key={src.key}
+              src={src}
+              state={property.sources?.[src.key]}
+              onChange={(patch) => updatePropertySource(property.id, src.key, patch)}
+              compact
+            />
+          ))}
+        </div>
+      </section>
+
       <section className="card">
         <h2>
-          <span className="step">{owned ? 5 : 6}</span> Catatan & temuan lapangan
+          <span className="step">{owned ? 6 : 7}</span> Catatan & temuan lapangan
         </h2>
         <TextField
           label="Catatan"
