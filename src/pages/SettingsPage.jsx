@@ -290,14 +290,18 @@ export default function SettingsPage() {
           />
         </div>
 
-        <h3>Aturan biaya surat-surat (dipakai kalau rencana memilih “hitung otomatis”)</h3>
+        <h3>Aturan biaya surat-surat</h3>
+        <p className="small muted">
+          BPHTB & NPOPTKP mengikuti <b>Kota/Kabupaten</b> tiap properti (atur di halaman properti). Dua isian pertama di bawah hanya dipakai untuk
+          properti “Daerah lain”. Honor PPAT & biaya BPN berlaku untuk semua daerah.
+        </p>
         <div className="form-grid">
-          <NumberField label="BPHTB" unit="%" value={s.bphtbPct} onChange={set('bphtbPct')} help="Kota Malang: 5% (Perda No. 4/2023)" min={0} max={10} />
+          <NumberField label="BPHTB" unit="%" value={s.bphtbPct} onChange={set('bphtbPct')} help="Untuk “Daerah lain”. Batas maksimal nasional 5% (UU HKPD)" min={0} max={10} />
           <MoneyField
             label="Batas tidak kena BPHTB (NPOPTKP)"
             value={s.npoptkp}
             onChange={set('npoptkp')}
-            help="Kota Malang: Rp80 jt (pemberitaan Bapenda; pastikan ke Bapenda)"
+            help="Untuk “Daerah lain”. Batas minimal nasional Rp80 jt (UU HKPD)"
             allowEmpty={false}
           />
           <NumberField label="Honor notaris/PPAT (maksimal)" unit="%" value={s.ppatPct} onChange={set('ppatPct')} help="Batas atas PP No. 24/2016: 1% harga transaksi" min={0} max={5} />

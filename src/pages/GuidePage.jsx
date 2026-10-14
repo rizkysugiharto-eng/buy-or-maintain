@@ -74,6 +74,10 @@ export default function GuidePage() {
             <code>450 jt</code>, <code>1,5 jt</code>, atau <code>450rb</code>.
           </li>
           <li>
+            <b>Kota / Kabupaten</b> — pilih daerahnya (Kota/Kab. Malang, Kota/Kab. Blitar, atau Daerah lain). Aturan pajak beli (BPHTB),
+            pajak daerah kos, dan penyesuaian harga bangun ikut daerah itu. Setiap angka bisa ditimpa kalau sudah dapat angka pasti dari Bapenda.
+          </li>
+          <li>
             <b>Rencana</b> — lihat langkah 3.
           </li>
           <li>

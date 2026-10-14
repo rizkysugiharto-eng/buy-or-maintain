@@ -3,6 +3,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MoneyField, NumberField, RatingBadge, RatingPicker, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
+import RegionRules from '../components/RegionRules.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { CHECKLIST } from '../data/example.js';
 import { PLAN_TYPES, costApproach, incomeApproach, reportCard } from '../lib/calc.js';
@@ -89,6 +90,7 @@ export default function PropertyPage() {
             placeholder="Misal: kos 3 lantai, 12 kamar, AC, kamar mandi dalam, penuh"
           />
         </div>
+        <RegionRules property={property} settings={data.settings} onChange={(patch) => updateProperty(property.id, patch)} />
       </section>
 
       <section className="card">

@@ -783,6 +783,40 @@ a {
   background: var(--surface-2);
 }
 
+.region {
+  margin-top: 16px;
+  border-top: 1px dashed var(--border);
+  padding-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.region > .field {
+  max-width: 420px;
+}
+
+.region-rules {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.region-rules h3 {
+  margin-top: 0;
+}
+
+.region-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.region-field .field {
+  width: 100%;
+}
+
 .example-notice {
   border-left: 5px solid var(--warning-text);
   background: var(--warning-soft);

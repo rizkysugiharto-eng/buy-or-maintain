@@ -199,3 +199,47 @@ describe('Biaya surat-surat otomatis (aturan Kota Malang)', () => {
     near(r.capex.transaction, jt(0.5) + jt(0.05) + 50_000, 1);
   });
 });
+
+describe('Aturan daerah per properti', () => {
+  const standar = { components: [{ costPerM2: jt(4.8) }] };
+  const buildPlan = {
+    type: 'bangun',
+    ...opex,
+    transactionAuto: true,
+    buildArea: 300,
+    furnishingPerRoom: 0,
+    designPct: 0,
+    contingencyPct: 0,
+    extraCosts: [],
+    rooms: 12,
+    rentPerRoom: jt(1),
+    occupancyPct: 90,
+    pbbYearly: jt(2),
+    buildMonths: 8,
+  };
+
+  it('tanpa daerah dianggap Kota Malang (indeks 1, tanpa pajak daerah kos)', () => {
+    const r = analyze(buildPlan, { askingPrice: M(1) }, standar);
+    expect(r.params.buildCostPerM2).toBe(jt(4.8));
+    expect(r.income.localTax).toBe(0);
+  });
+
+  it('Kota Blitar: harga paket material × indeks 0,70', () => {
+    const r = analyze(buildPlan, { askingPrice: M(1), region: 'kota-blitar' }, standar);
+    near(r.params.buildCostPerM2, jt(3.36), 1);
+  });
+
+  it('indeks bisa dimatikan per rencana (mis. sudah pakai RAB lokal)', () => {
+    const r = analyze({ ...buildPlan, regionalPriceAdjust: false }, { askingPrice: M(1), region: 'kota-blitar' }, standar);
+    expect(r.params.buildCostPerM2).toBe(jt(4.8));
+  });
+
+  it('angka timpaan di properti mengalahkan preset daerah', () => {
+    const property = { askingPrice: M(1), region: 'kab-blitar', regionRules: { npoptkp: jt(100), kosTaxPct: 10 } };
+    const r = analyze(buildPlan, property, standar);
+    // BPHTB 5% × (1 M − 100 jt) + PPAT 1% + BPN
+    near(r.capex.transaction, jt(45) + jt(10) + jt(1) + 50_000, 1);
+    near(r.income.localTax, r.income.effective * 0.1, 1);
+    expect(r.noiMonthly).toBeLessThan(analyze(buildPlan, { askingPrice: M(1), region: 'kab-blitar' }, standar).noiMonthly);
+  });
+});

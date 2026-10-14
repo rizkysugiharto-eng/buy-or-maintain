@@ -83,6 +83,8 @@ export function DataProvider({ children }) {
         const property = {
           id: newId('prop'),
           name: 'Properti baru',
+          region: 'kota-malang',
+          regionRules: {},
           address: '',
           description: '',
           askingPrice: null,

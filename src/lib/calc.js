@@ -5,6 +5,8 @@
 //   Balik modal  = waktu sampai uang bersih terkumpul = total modal (+ masa bangun)
 // Semua uang dalam Rupiah per tahun, kecuali disebut lain.
 
+import { regionRules } from '../data/regions.js';
+
 export const PLAN_TYPES = {
   beli: { label: 'Beli jadi', hint: 'Bangunan sudah jadi, langsung disewakan' },
   renovasi: { label: 'Renovasi', hint: 'Bangunan lama diperbaiki / ditambah kamar' },
@@ -67,19 +69,25 @@ export function materialCostPerM2(material) {
 export function resolvePlan(plan, property, material, settings = DEFAULT_SETTINGS) {
   const isBuild = plan.type === 'bangun';
   const m = isBuild ? material : null;
+  const region = regionRules(property, settings);
+  // Paket material dikalibrasi untuk Kota Malang; di daerah lain disesuaikan dengan indeks harga bangun
+  const priceIndex = m && plan.regionalPriceAdjust !== false ? num(region.buildIndex, 1) : 1;
   return {
     type: plan.type,
     purchasePrice: num(pick(plan.purchasePrice, property?.askingPrice)),
     transactionPct: num(plan.transactionPct, 6.5),
     transactionAuto: !!plan.transactionAuto,
-    bphtbPct: num(settings.bphtbPct, 5),
-    npoptkp: num(settings.npoptkp, 80_000_000),
+    // Aturan BPHTB & pajak daerah kos mengikuti daerah properti
+    bphtbPct: num(region.bphtbPct, 5),
+    npoptkp: num(region.npoptkp, 80_000_000),
+    localTaxPct: num(region.kosTaxPct, 0),
     ppatPct: num(settings.ppatPct, 1),
     bpnPermil: num(settings.bpnPermil, 1),
     bpnFee: num(settings.bpnFee, 50_000),
     extraCosts: (plan.extraCosts ?? []).reduce((sum, c) => sum + num(c.amount), 0),
     buildArea: isBuild ? num(plan.buildArea) : 0,
-    buildCostPerM2: isBuild ? (m ? materialCostPerM2(m) : num(plan.buildCostPerM2)) : 0,
+    buildCostPerM2: isBuild ? (m ? materialCostPerM2(m) * priceIndex : num(plan.buildCostPerM2)) : 0,
+    priceIndex,
     furnishingPerRoom: isBuild ? num(pick(m?.furnishingPerRoom, plan.furnishingPerRoom)) : 0,
     designPct: isBuild ? num(pick(m?.designPct, plan.designPct)) : 0,
     contingencyPct: isBuild ? num(plan.contingencyPct) : 0,
@@ -158,8 +166,9 @@ export function incomeBreakdown(p) {
   const maintenance = (effective * p.maintenancePct) / 100;
   const management = (effective * p.managementPct) / 100;
   const tax = (effective * p.incomeTaxPct) / 100;
-  const costs = opex + maintenance + p.pbbYearly + management + tax;
-  return { gross, effective, opex, maintenance, pbb: p.pbbYearly, management, tax, costs, noi: effective - costs };
+  const localTax = (effective * num(p.localTaxPct)) / 100;
+  const costs = opex + maintenance + p.pbbYearly + management + tax + localTax;
+  return { gross, effective, opex, maintenance, pbb: p.pbbYearly, management, tax, localTax, costs, noi: effective - costs };
 }
 
 /**
@@ -175,7 +184,7 @@ export function simulate(p, settings = DEFAULT_SETTINGS) {
   const costGrowth = num(settings.costGrowthPct) / 100;
   const maxMonths = num(settings.maxYears, 60) * 12;
   const fixedYear = base.opex + base.pbb;
-  const variableShare = (p.maintenancePct + p.managementPct + p.incomeTaxPct) / 100;
+  const variableShare = (p.maintenancePct + p.managementPct + p.incomeTaxPct + num(p.localTaxPct)) / 100;
 
   let cumulative = -cap.total;
   const yearly = [{ year: 0, value: cumulative }];
@@ -216,7 +225,7 @@ export function maxPriceForYield(p, targetPct) {
 // Keterisian minimal agar biaya rutin tertutup
 export function breakEvenOccupancy(p) {
   const inc = incomeBreakdown(p);
-  const share = 1 - (p.maintenancePct + p.managementPct + p.incomeTaxPct) / 100;
+  const share = 1 - (p.maintenancePct + p.managementPct + p.incomeTaxPct + num(p.localTaxPct)) / 100;
   if (inc.gross <= 0 || share <= 0) return null;
   return ((inc.opex + inc.pbb) / (inc.gross * share)) * 100;
 }

@@ -12,6 +12,7 @@ import { PLAN_TYPES, reportCard } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 import { rowLabel, shortName } from '../lib/labels.js';
 import { SOURCES, checkedCount } from '../data/sources.js';
+import { regionRules } from '../data/regions.js';
 
 function Stat({ label, value, sub }) {
   return (
@@ -164,7 +165,7 @@ export default function Home() {
               <div>
                 <h3>{property.name}</h3>
                 <p className="muted small">
-                  {formatCompact(property.askingPrice, 1)}
+                  {regionRules(property, settings).name} · {formatCompact(property.askingPrice, 1)}
                   {row ? ` · ${PLAN_TYPES[row.plan.type].label.toLowerCase()}: ${rowLabel(row, { withProperty: false })}` : ''}
                 </p>
               </div>

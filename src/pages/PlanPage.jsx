@@ -6,9 +6,10 @@ import { CashflowChart, Legend } from '../components/Charts.jsx';
 import { CostList, MoneyField, NumberField, Segmented, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
+import { regionRules } from '../data/regions.js';
 import { materialPricesVerified } from '../data/sources.js';
 import { PLAN_TYPES, SCENARIOS, analyze, materialCostPerM2 } from '../lib/calc.js';
-import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
+import { formatCompact, formatMonths, formatNumber, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 
 function Line({ label, value, strong, minus }) {
   return (
@@ -106,6 +107,7 @@ export function ResultDetail({ plan, property, material, settings }) {
               <Line label="PBB" value={inc.pbb} minus />
               {inc.management > 0 && <Line label="Fee pengelola" value={inc.management} minus />}
               {inc.tax > 0 && <Line label="Pajak penghasilan" value={inc.tax} minus />}
+              {inc.localTax > 0 && <Line label="Pajak daerah kos" value={inc.localTax} minus />}
               <Line label="Uang bersih per tahun" value={inc.noi} strong />
             </tbody>
           </table>
@@ -155,6 +157,7 @@ export default function PlanPage() {
   const settings = data.settings;
   const variants = analysis.rows.filter((r) => r.plan.id === plan.id);
   const current = variants[Math.min(variantIdx, variants.length - 1)];
+  const region = regionRules(property, settings);
   const isBuild = plan.type === 'bangun';
   const chosen = plan.materialIds ?? [];
   // Warna mengikuti paket material, sama dengan di halaman Banding Material
@@ -231,7 +234,9 @@ export default function PlanPage() {
                     <strong>{formatCompact(current?.result.capex.transaction, 1)}</strong>
                     <span className="muted"> ≈ {formatPercent(current?.result.capex.transactionPct)} dari harga</span>
                   </div>
-                  <span className="field-help">BPHTB 5% × (harga − Rp80 jt) + PPAT maks. 1% + balik nama BPN</span>
+                  <span className="field-help">
+                    BPHTB {formatPercent(region.bphtbPct, 0)} × (harga − {formatCompact(region.npoptkp)}) + PPAT maks. 1% + balik nama BPN · {region.name}
+                  </span>
                 </div>
               ) : (
                 <NumberField
@@ -247,8 +252,8 @@ export default function PlanPage() {
               <label className="check wide">
                 <input type="checkbox" checked={!!plan.transactionAuto} onChange={(e) => set('transactionAuto')(e.target.checked)} />
                 <span>
-                  Hitung biaya surat-surat otomatis sesuai aturan Kota Malang (BPHTB Perda No. 4/2023, honor PPAT PP No. 24/2016). Matikan
-                  kalau sudah dapat angka pasti dari notaris.
+                  Hitung biaya surat-surat otomatis sesuai aturan {region.name} (BPHTB & NPOPTKP dari aturan daerah di halaman properti, honor
+                  PPAT PP No. 24/2016). Matikan kalau sudah dapat angka pasti dari notaris.
                 </span>
               </label>
             </div>
@@ -273,6 +278,19 @@ export default function PlanPage() {
                       </label>
                     ))}
                   </div>
+                  {region.buildIndex !== 1 && (
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={plan.regionalPriceAdjust !== false}
+                        onChange={(e) => set('regionalPriceAdjust')(e.target.checked)}
+                      />
+                      <span>
+                        Sesuaikan harga paket ke harga {region.name} (× {formatNumber(region.buildIndex, 2)}, acuan HSBGN). Matikan kalau harga paketnya
+                        sudah dari RAB kontraktor setempat.
+                      </span>
+                    </label>
+                  )}
                   <span className="field-help">
                     {!materialPricesVerified(data.sources) && <b className="warn-text">Harga paket masih angka contoh, belum dari RAB. </b>}
                     Pilih 2 atau lebih untuk dibandingkan. Isi & harga tiap paket diatur di menu <Link to="/material">Banding Material</Link>.

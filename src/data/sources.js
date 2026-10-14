@@ -153,7 +153,7 @@ export const SOURCES = [
     key: 'surat-surat',
     label: 'Biaya surat-surat pembeli',
     usedIn: 'Semua rencana',
-    now: 'Dihitung otomatis: BPHTB 5% × (harga − Rp80 jt) (Perda Kota Malang No. 4/2023) + honor PPAT maks. 1% (PP No. 24/2016) + balik nama BPN ± harga/1000 + Rp50 rb. Untuk Rp3,2 M ≈ 6,0%',
+    now: 'Dihitung otomatis sesuai Kota/Kabupaten properti. Kota Malang: BPHTB 5% × (harga − Rp80 jt) (Perda No. 4/2023); Kab. Malang sama (Perda 7/2023); Kab. Blitar tarif 5% (Perda 8/2023); Kota Blitar memakai batas nasional. Ditambah honor PPAT maks. 1% (PP No. 24/2016) + balik nama BPN ± harga/1000 + Rp50 rb. Untuk Rp3,2 M ≈ 6,0%',
     verify: 'Hitungan BPHTB dari Bapenda Kota Malang + penawaran biaya notaris/PPAT',
     where: 'Rencana → Biaya surat-surat (%)',
     how: [

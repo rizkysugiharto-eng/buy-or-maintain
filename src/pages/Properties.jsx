@@ -5,6 +5,7 @@ import { RatingBadge } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { reportCard } from '../lib/calc.js';
+import { regionRules } from '../data/regions.js';
 import { formatCompact, formatNumber, formatYears } from '../lib/format.js';
 
 export default function Properties() {
@@ -34,7 +35,9 @@ export default function Properties() {
             <Link key={property.id} to={`/properti/${property.id}`} className="card list-item" style={{ '--accent': `var(--series-${(i % 8) + 1})` }}>
               <div className="list-main">
                 <h3>{property.name}</h3>
-                <p className="muted small">{property.address || 'Alamat belum diisi'}</p>
+                <p className="muted small">
+                  {regionRules(property, data.settings).name} · {property.address || 'Alamat belum diisi'}
+                </p>
                 <p className="small">
                   {formatCompact(property.askingPrice, 1)}
                   {property.landArea ? ` · tanah ${formatNumber(property.landArea)} m²` : ''}
