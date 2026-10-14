@@ -1,12 +1,12 @@
 // Detail satu properti: data, rencana-rencananya, penilaian, harga wajar, dan daftar cek sebelum DP.
 
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { MoneyField, NumberField, RatingBadge, RatingPicker, TextField } from '../components/Fields.jsx';
+import { MoneyField, NumberField, RatingBadge, RatingPicker, Segmented, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import RegionRules from '../components/RegionRules.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { CHECKLIST } from '../data/example.js';
-import { PLAN_TYPES, costApproach, incomeApproach, reportCard } from '../lib/calc.js';
+import { costApproach, incomeApproach, planTypesFor, reportCard, saleProceeds } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears } from '../lib/format.js';
 
 function Range({ label, range, help }) {
@@ -44,6 +44,9 @@ export default function PropertyPage() {
   const fairIncome = primary ? incomeApproach(primary.plan, property, primary.material, data.settings) : null;
   const checklist = property.checklist ?? {};
   const doneCount = CHECKLIST.filter((c) => checklist[c.key]).length;
+  const owned = !!property.owned;
+  const types = planTypesFor(property);
+  const sale = owned ? saleProceeds(property, data.settings) : null;
 
   function remove() {
     if (window.confirm(`Hapus "${property.name}" beserta semua rencananya?`)) {
@@ -62,11 +65,7 @@ export default function PropertyPage() {
           <h1>{property.name}</h1>
           <p className="muted">{property.address}</p>
         </div>
-        {card.verdict && (
-          <RatingBadge rating={card.verdict.level}>
-            Kesimpulan: {card.verdict.label}
-          </RatingBadge>
-        )}
+        {card.verdict && <RatingBadge rating={card.verdict.level}>Kesimpulan: {card.verdict.label}</RatingBadge>}
       </div>
 
       <section className="card">
@@ -74,10 +73,36 @@ export default function PropertyPage() {
           <span className="step">1</span> Data properti
         </h2>
         <div className="form-grid">
+          <Segmented
+            label="Status"
+            value={owned ? 'milik' : 'beli'}
+            onChange={(v) => set('owned')(v === 'milik')}
+            options={[
+              {
+                value: 'beli',
+                label: 'Mau dibeli',
+                hint: 'Dibandingkan harga dari penjual',
+              },
+              {
+                value: 'milik',
+                label: 'Sudah milik keluarga',
+                hint: 'Dijual, atau disewakan / dibangun',
+              },
+            ]}
+          />
           <TextField label="Nama properti" value={property.name} onChange={set('name')} help="Misal: Kos #1 · Suhat Indah" />
           <TextField label="Nama singkat (untuk grafik)" value={property.shortName} onChange={set('shortName')} placeholder="Kos #1" />
           <TextField label="Alamat / lokasi" value={property.address} onChange={set('address')} wide />
-          <MoneyField label="Harga yang diminta penjual" value={property.askingPrice} onChange={set('askingPrice')} />
+          {owned ? (
+            <MoneyField
+              label="Perkiraan harga kalau dijual"
+              value={property.askingPrice}
+              onChange={set('askingPrice')}
+              help="Luas tanah × harga tanah sekitar (+ nilai bangunan), atau tawaran pembeli"
+            />
+          ) : (
+            <MoneyField label="Harga yang diminta penjual" value={property.askingPrice} onChange={set('askingPrice')} />
+          )}
           <NumberField label="Luas tanah" unit="m²" value={property.landArea} onChange={set('landArea')} min={0} />
           <NumberField label="Luas bangunan" unit="m²" value={property.buildingArea} onChange={set('buildingArea')} min={0} />
           <NumberField label="Jumlah kamar sekarang" unit="kamar" value={property.rooms} onChange={set('rooms')} min={0} />
@@ -98,9 +123,32 @@ export default function PropertyPage() {
           <span className="step">2</span> Rencana untuk properti ini
         </h2>
         <p className="muted">
-          Bandingkan beberapa cara: dibeli lalu langsung disewakan, direnovasi dulu, atau dibongkar dan dibangun kos baru. Rencana bertanda
-          ★ dipakai di Ringkasan.
+          {owned
+            ? 'Bandingkan dengan menjualnya: disewakan apa adanya, direnovasi dulu, atau dibangun baru (bisa membandingkan paket material). '
+            : 'Bandingkan beberapa cara: dibeli lalu langsung disewakan, direnovasi dulu, atau dibongkar dan dibangun kos baru. '}
+          Rencana bertanda ★ dipakai di Ringkasan.
         </p>
+        {owned && (
+          <div className="sale-box">
+            <strong>Kalau dijual</strong>
+            {sale ? (
+              <p>
+                Terima bersih ±<b>{formatCompact(sale.net, 2)}</b> (harga {formatCompact(sale.value, 2)} − PPh final{' '}
+                {formatPercent(data.settings.saleTaxPct)}
+                {sale.agent > 0 ? ` − komisi makelar ${formatPercent(data.settings.saleAgentPct)}` : ''}
+                ). Kalau uangnya ditaruh di SBN ritel ±{formatCompact((sale.net * data.settings.benchmarkSbn) / 100 / 12)}
+                /bulan, di deposito ±{formatCompact((sale.net * data.settings.benchmarkDeposit) / 100 / 12)}
+                /bulan — tanpa repot mengelola.
+              </p>
+            ) : (
+              <p className="muted">Isi “Perkiraan harga kalau dijual” di atas supaya bisa dibandingkan.</p>
+            )}
+            <p className="small muted">
+              Setiap rencana di bawah dihitung seolah nilai jual bersih ini “ditanam” di properti, jadi hasilnya bisa langsung dibandingkan dengan
+              menjual.
+            </p>
+          </div>
+        )}
         <div className="plan-list">
           {plans.map((plan) => {
             const variants = analysis.rows.filter((r) => r.plan.id === plan.id);
@@ -121,13 +169,19 @@ export default function PropertyPage() {
                     <Link to={`/rencana/${plan.id}`}>
                       <strong>{plan.name}</strong>
                     </Link>
-                    <span className="small muted">{PLAN_TYPES[plan.type].label}</span>
+                    <span className="small muted">{types[plan.type].label}</span>
                   </div>
                   <div className="plan-actions">
                     <Link className="btn small primary" to={`/rencana/${plan.id}`}>
                       Ubah angka
                     </Link>
-                    <button type="button" className="btn-icon" title="Salin rencana" aria-label="Salin rencana" onClick={() => navigate(`/rencana/${duplicatePlan(plan)}`)}>
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      title="Salin rencana"
+                      aria-label="Salin rencana"
+                      onClick={() => navigate(`/rencana/${duplicatePlan(plan)}`)}
+                    >
                       <Icon name="copy" />
                     </button>
                     <button
@@ -146,7 +200,7 @@ export default function PropertyPage() {
                     <thead>
                       <tr>
                         {variants.length > 1 && <th>Material</th>}
-                        <th>Total modal</th>
+                        <th>{owned ? 'Uang baru' : 'Total modal'}</th>
                         <th>Uang bersih / bulan</th>
                         <th>Hasil / tahun</th>
                         <th>Modal kembali</th>
@@ -157,7 +211,7 @@ export default function PropertyPage() {
                       {variants.map((v) => (
                         <tr key={v.key}>
                           {variants.length > 1 && <th scope="row">{v.material?.name}</th>}
-                          <td>{formatCompact(v.result.capex.total, 2)}</td>
+                          <td>{formatCompact(owned ? v.result.capex.newMoney : v.result.capex.total, 2)}</td>
                           <td>{formatCompact(v.result.noiMonthly)}</td>
                           <td>{formatPercent(v.result.netYield)}</td>
                           <td>{formatYears(v.result.paybackYears, data.settings.maxYears)}</td>
@@ -173,7 +227,7 @@ export default function PropertyPage() {
         </div>
         <div className="add-plan">
           <span className="small muted">Tambah rencana:</span>
-          {Object.entries(PLAN_TYPES).map(([type, t]) => (
+          {Object.entries(types).map(([type, t]) => (
             <button key={type} type="button" className="btn" onClick={() => navigate(`/rencana/${addPlan(property, type)}`)} title={t.hint}>
               <Icon name="plus" /> {t.label}
             </button>
@@ -207,7 +261,12 @@ export default function PropertyPage() {
         </h2>
         <p className="muted">Perkiraan harga yang pantas dibayar, dari dua sisi: nilai tanah + bangunannya, dan uang sewa yang bisa dihasilkan.</p>
         <div className="form-grid">
-          <MoneyField label="Harga tanah sekitar (terendah) per m²" value={property.landPriceMin} onChange={set('landPriceMin')} help="Dari iklan tanah di sekitar" />
+          <MoneyField
+            label="Harga tanah sekitar (terendah) per m²"
+            value={property.landPriceMin}
+            onChange={set('landPriceMin')}
+            help="Dari iklan tanah di sekitar"
+          />
           <MoneyField label="Harga tanah sekitar (tertinggi) per m²" value={property.landPriceMax} onChange={set('landPriceMax')} />
           <MoneyField
             label="Nilai bangunan + isi (terendah)"
@@ -222,10 +281,12 @@ export default function PropertyPage() {
           <Range
             label={`Dari uang sewa (hasil ${formatPercent(data.settings.targetYieldLow)}–${formatPercent(data.settings.targetYieldHigh)})`}
             range={fairIncome}
-            help={primary ? `memakai rencana ★ ${primary.plan.name}${primary.material ? ` · ${primary.material.name}` : ''}` : 'tambahkan rencana dulu'}
+            help={
+              primary ? `memakai rencana ★ ${primary.plan.name}${primary.material ? ` · ${primary.material.name}` : ''}` : 'tambahkan rencana dulu'
+            }
           />
           <div className="range">
-            <span className="stat-label">Harga yang diminta</span>
+            <span className="stat-label">{owned ? 'Perkiraan harga jual' : 'Harga yang diminta'}</span>
             <strong>{formatCompact(property.askingPrice, 2)}</strong>
             {card.rows[0].rating && <RatingBadge rating={card.rows[0].rating}>{card.rows[0].note}</RatingBadge>}
           </div>
@@ -238,28 +299,39 @@ export default function PropertyPage() {
         )}
       </section>
 
-      <section className="card">
-        <h2>
-          <span className="step">5</span> Cek sebelum bayar DP{' '}
-          <span className="small muted">
-            ({doneCount}/{CHECKLIST.length} selesai)
-          </span>
-        </h2>
-        <ul className="checklist">
-          {CHECKLIST.map((c) => (
-            <li key={c.key}>
-              <label>
-                <input type="checkbox" checked={!!checklist[c.key]} onChange={(e) => set('checklist')({ ...checklist, [c.key]: e.target.checked })} />
-                <span>{c.label}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {!owned && (
+        <section className="card">
+          <h2>
+            <span className="step">5</span> Cek sebelum bayar DP{' '}
+            <span className="small muted">
+              ({doneCount}/{CHECKLIST.length} selesai)
+            </span>
+          </h2>
+          <ul className="checklist">
+            {CHECKLIST.map((c) => (
+              <li key={c.key}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!checklist[c.key]}
+                    onChange={(e) =>
+                      set('checklist')({
+                        ...checklist,
+                        [c.key]: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>{c.label}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card">
         <h2>
-          <span className="step">6</span> Catatan & temuan lapangan
+          <span className="step">{owned ? 5 : 6}</span> Catatan & temuan lapangan
         </h2>
         <TextField
           label="Catatan"

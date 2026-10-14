@@ -258,6 +258,16 @@ export default function GuidePage() {
           <p>Karena seluruh angka ikut di dalam link (itulah yang membuatnya tidak perlu server). Panjangnya tidak masalah untuk WhatsApp.</p>
         </details>
         <details className="faq">
+          <summary>Tanah/rumah sudah milik keluarga — dijual atau disewakan?</summary>
+          <p>
+            Di halaman properti pilih Status <b>Sudah milik keluarga</b> dan isi <b>Perkiraan harga kalau dijual</b>. Muncul kotak “Kalau dijual”
+            (uang bersih setelah PPh final 2,5%, dan hasilnya kalau ditaruh di SBN/deposito). Lalu tambahkan rencana: <b>Sewakan apa adanya</b>,{' '}
+            <b>Renovasi lalu sewakan</b>, atau <b>Bangun lalu sewakan</b> (bisa membandingkan paket material). Setiap rencana menunjukkan uang baru
+            yang harus dikeluarkan dan selisihnya per bulan dibanding menjual. Kalau disewakan utuh (satu rumah atau lahan), isi jumlah kamar 1 dan
+            sewa per kamar = sewa per bulan.
+          </p>
+        </details>
+        <details className="faq">
           <summary>Ganti HP / laptop, datanya ikut?</summary>
           <p>Tidak otomatis. Kirim link bagikan ke diri sendiri, atau pakai Simpan ke file lalu Buka file di perangkat baru.</p>
         </details>

@@ -42,7 +42,7 @@ export default function Properties() {
                   {property.askingPrice ? formatCompact(property.askingPrice, 1) : 'Harga belum diisi'}
                   {property.landArea ? ` · tanah ${formatNumber(property.landArea)} m²` : ''}
                   {` · ${planCount} rencana`}
-                  {row ? ` · modal kembali ${formatYears(row.result.paybackYears, data.settings.maxYears)}` : ''}
+                  {row && !row.result.incomplete ? ` · modal kembali ${formatYears(row.result.paybackYears, data.settings.maxYears)}` : ''}
                 </p>
               </div>
               {verdict && <RatingBadge rating={verdict.level}>{verdict.label}</RatingBadge>}

@@ -93,10 +93,11 @@ export const REGIONS = {
       kosTaxPct: 'Belum pasti apakah kos dipungut pajak jasa perhotelan. Kalau dipungut, umumnya 10% dari sewa. Tanyakan Bapenda Kab. Blitar.',
       buildIndex: 'HSBGN 2022 Kab. Blitar Rp6,61 jt (≤2 lantai) / Rp7,51 jt per m² (>2 lantai) ≈ 0,95 × Kota Malang',
     },
-    market: 'Belum ada data sewa & tanah per kecamatan — wajib survei. Acuan kota: sewa Kota Blitar ±Rp550 rb–1,2 jt/bulan.',
+    market: 'Tanah Ponggok (iklan Rumah123 2026): pinggir jalan raya Blitar–Kediri & dekat Pasar Cangkring ±Rp1,1–2,4 jt/m²; tanah di dalam desa kemungkinan lebih rendah — cek ZNT BPN. Data sewa per kecamatan belum ada, wajib survei. Acuan kota: sewa kos Kota Blitar ±Rp550 rb–1,2 jt/bulan.',
     links: [
       { label: 'Perda Kab. Blitar 8/2023 (teks lengkap, DDTC)', url: 'https://perpajakan.ddtc.co.id/sumber-hukum/peraturan-daerah/perda-kabupaten-blitar-8-tahun-2023' },
       { label: 'Bapenda Kabupaten Blitar', url: 'https://bapenda.blitarkab.go.id/' },
+      { label: 'Rumah123 — tanah dijual di Ponggok', url: 'https://www.rumah123.com/jual/blitar/ponggok/tanah/' },
       PERGUB_HSBGN,
       UU_HKPD_NPOPTKP,
     ],

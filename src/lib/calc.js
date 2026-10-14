@@ -3,6 +3,9 @@
 //   Total modal  = harga beli + biaya surat-surat (±6,5%) + biaya bangun/renovasi
 //   Uang bersih  = sewa × kamar × keterisian − operasional − perawatan − PBB (− fee pengelola − pajak)
 //   Balik modal  = waktu sampai uang bersih terkumpul = total modal (+ masa bangun)
+// Properti yang sudah milik keluarga: "harga beli" diganti nilai bersihnya kalau dijual (uang yang
+// tidak jadi diterima), tanpa biaya surat-surat. Dengan begitu menyewakan bisa dibandingkan dengan
+// menjual lalu menaruh uangnya di SBN/deposito.
 // Semua uang dalam Rupiah per tahun, kecuali disebut lain.
 
 import { regionRules } from '../data/regions.js';
@@ -12,6 +15,15 @@ export const PLAN_TYPES = {
   renovasi: { label: 'Renovasi', hint: 'Bangunan lama diperbaiki / ditambah kamar' },
   bangun: { label: 'Bangun baru', hint: 'Bangun kos dari tanah kosong atau setelah dibongkar' },
 };
+
+// Nama jenis rencana untuk properti yang sudah milik keluarga
+const OWNED_PLAN_TYPES = {
+  beli: { label: 'Sewakan apa adanya', hint: 'Tanah/bangunan yang ada langsung disewakan' },
+  renovasi: { label: 'Renovasi lalu sewakan', hint: 'Bangunan lama diperbaiki dulu' },
+  bangun: { label: 'Bangun lalu sewakan', hint: 'Bangun baru di tanah sendiri, bandingkan paket material' },
+};
+
+export const planTypesFor = (property) => (property?.owned ? OWNED_PLAN_TYPES : PLAN_TYPES);
 
 export const RATINGS = {
   baik: { label: 'Baik', score: 2 },
@@ -41,6 +53,9 @@ export const DEFAULT_SETTINGS = {
   // Pembanding hasil investasi lain (%/tahun)
   benchmarkSbn: 6.9, // SBN ritel SR025, Agustus 2026
   benchmarkDeposit: 3.75, // bunga penjaminan LPS bank umum, Okt 2026–Jan 2027
+  // Biaya kalau properti milik keluarga dijual: PPh final penjual 2,5% (PP No. 34/2016) + komisi makelar
+  saleTaxPct: 2.5,
+  saleAgentPct: 0,
   scenarios: {
     optimis: { rentPct: 5, occupancyPt: 8, opexPct: 0, capexPct: 0 },
     pesimis: { rentPct: -10, occupancyPt: -12, opexPct: 15, capexPct: 15 },
@@ -55,6 +70,15 @@ export const SCENARIOS = {
 
 const num = (v, fallback = 0) => (v == null || v === '' || Number.isNaN(Number(v)) ? fallback : Number(v));
 const pick = (override, base) => (override == null || override === '' ? base : override);
+
+/** Uang yang diterima kalau properti milik keluarga dijual: harga − PPh final − komisi makelar. */
+export function saleProceeds(property, settings = DEFAULT_SETTINGS) {
+  const value = num(property?.askingPrice);
+  if (!value) return null;
+  const tax = (value * num(settings.saleTaxPct, 2.5)) / 100;
+  const agent = (value * num(settings.saleAgentPct)) / 100;
+  return { value, tax, agent, net: value - tax - agent };
+}
 
 // Biaya bangun per m² dari paket material = jumlah biaya semua komponennya
 export function materialCostPerM2(material) {
@@ -72,9 +96,12 @@ export function resolvePlan(plan, property, material, settings = DEFAULT_SETTING
   const region = regionRules(property, settings);
   // Paket material dikalibrasi untuk Kota Malang; di daerah lain disesuaikan dengan indeks harga bangun
   const priceIndex = m && plan.regionalPriceAdjust !== false ? num(region.buildIndex, 1) : 1;
+  const owned = !!property?.owned;
   return {
     type: plan.type,
-    purchasePrice: num(pick(plan.purchasePrice, property?.askingPrice)),
+    owned,
+    // Milik keluarga: nilai bersih kalau dijual = uang yang "ditanam" dengan tidak menjualnya
+    purchasePrice: owned ? num(saleProceeds(property, settings)?.net) : num(pick(plan.purchasePrice, property?.askingPrice)),
     transactionPct: num(plan.transactionPct, 6.5),
     transactionAuto: !!plan.transactionAuto,
     // Aturan BPHTB & pajak daerah kos mengikuti daerah properti
@@ -130,6 +157,7 @@ export function applyScenario(p, scenario, settings = DEFAULT_SETTINGS) {
  * BPHTB = 5% × (harga − NPOPTKP), PPAT maks. 1% harga, balik nama BPN ≈ harga/1000 + Rp50 rb.
  */
 export function transactionCost(p, price = p.purchasePrice) {
+  if (p.owned) return 0; // tidak ada pembelian
   if (!p.transactionAuto) return (price * p.transactionPct) / 100;
   if (!price) return 0;
   const bphtb = (Math.max(0, price - p.npoptkp) * p.bphtbPct) / 100;
@@ -155,6 +183,8 @@ export function capexBreakdown(p) {
     extras: p.extraCosts,
     build, // semua biaya di luar harga beli & surat-surat
     total: p.purchasePrice + transaction + build,
+    // Uang yang benar-benar harus dikeluarkan (properti milik keluarga: hanya biaya bangun/renovasi)
+    newMoney: p.owned ? build : p.purchasePrice + transaction + build,
   };
 }
 
@@ -217,8 +247,9 @@ export function maxPriceForYield(p, targetPct) {
   const cap = capexBreakdown({ ...p, purchasePrice: 0 });
   if (noi <= 0 || !targetPct) return null;
   // Biaya surat-surat = rate × harga + tetap (berlaku untuk harga di atas NPOPTKP)
-  const rate = p.transactionAuto ? p.bphtbPct / 100 + p.ppatPct / 100 + p.bpnPermil / 1000 : p.transactionPct / 100;
-  const fixed = p.transactionAuto ? p.bpnFee - (p.npoptkp * p.bphtbPct) / 100 : 0;
+  const auto = p.transactionAuto && !p.owned;
+  const rate = p.owned ? 0 : auto ? p.bphtbPct / 100 + p.ppatPct / 100 + p.bpnPermil / 1000 : p.transactionPct / 100;
+  const fixed = auto ? p.bpnFee - (p.npoptkp * p.bphtbPct) / 100 : 0;
   return Math.max(0, (noi / (targetPct / 100) - cap.build - fixed) / (1 + rate));
 }
 
@@ -236,6 +267,8 @@ export function analyze(plan, property, material, settings = DEFAULT_SETTINGS, s
   const capex = capexBreakdown(p);
   const income = incomeBreakdown(p);
   const sim = simulate(p, settings);
+  // Milik keluarga: kapan uang baru (biaya bangun/renovasi) kembali, tanpa menghitung nilai tanah
+  const newMoneySim = p.owned && capex.build > 0 ? simulate({ ...p, purchasePrice: 0 }, settings) : null;
   return {
     params: p,
     capex,
@@ -249,8 +282,13 @@ export function analyze(plan, property, material, settings = DEFAULT_SETTINGS, s
     yearly: sim.yearly,
     incomeStartMonth: p.buildMonths,
     breakEvenOccupancy: breakEvenOccupancy(p),
-    maxPrice: maxPriceForYield(p, settings.targetYieldLow),
+    maxPrice: p.owned ? null : maxPriceForYield(p, settings.targetYieldLow),
+    newMoneyPaybackYears: newMoneySim ? newMoneySim.paybackYears : null,
+    // Selisih per bulan dibanding: dijual + uang bangun ditaruh di SBN ritel
+    vsSbnMonthly: (income.noi - (capex.total * num(settings.benchmarkSbn)) / 100) / 12,
     roomCost: p.rooms > 0 ? capex.total / p.rooms : null,
+    // Sewa atau jumlah kamar/unit belum diisi: hasil belum bisa dipakai
+    incomplete: income.gross <= 0,
   };
 }
 
@@ -281,6 +319,8 @@ export function incomeApproach(plan, property, material, settings = DEFAULT_SETT
   return low == null || high == null ? null : { min: low, max: high };
 }
 
+const moneyShort = (v) => (v >= 1e9 ? `Rp${(v / 1e9).toFixed(1).replace('.', ',')} M` : `Rp${Math.round(v / 1e6)} jt`);
+
 function rate(value, good, ok) {
   if (value == null) return 'kurang';
   if (value <= good) return 'baik';
@@ -292,21 +332,25 @@ function rate(value, good, ok) {
  * Rapor singkat Baik / Cukup / Kurang untuk satu properti, memakai rencana utamanya.
  * Lokasi & risiko diisi sendiri oleh keluarga; sisanya dihitung otomatis.
  */
-export function reportCard(property, result, settings = DEFAULT_SETTINGS) {
+export function reportCard(property, fullResult, settings = DEFAULT_SETTINGS) {
+  const result = fullResult?.incomplete ? null : fullResult;
   const fair = costApproach(property);
   const priceRatio = fair ? num(property.askingPrice) / fair.max : null;
+  const owned = !!property?.owned;
   const rows = [
-    {
-      key: 'harga',
-      label: 'Harga diminta dibanding harga wajar',
-      rating: priceRatio == null ? null : rate(priceRatio, 1, 1.1),
-      note:
-        priceRatio == null
-          ? 'isi harga tanah sekitar'
-          : priceRatio <= 1
-            ? 'masih wajar'
-            : `±${Math.round((priceRatio - 1) * 100)}% kemahalan`,
-    },
+    owned
+      ? { key: 'harga', label: 'Harga dibanding harga wajar', rating: null, note: 'milik keluarga' }
+      : {
+          key: 'harga',
+          label: 'Harga dibanding harga wajar',
+          rating: priceRatio == null ? null : rate(priceRatio, 1, 1.1),
+          note:
+            priceRatio == null
+              ? 'isi harga tanah sekitar'
+              : priceRatio <= 1
+                ? 'masih wajar'
+                : `±${Math.round((priceRatio - 1) * 100)}% kemahalan`,
+        },
     { key: 'lokasi', label: 'Lokasi & peminat', rating: property.locationRating || null, note: property.locationNote },
     {
       key: 'langsung',
@@ -316,9 +360,9 @@ export function reportCard(property, result, settings = DEFAULT_SETTINGS) {
     },
     {
       key: 'modal',
-      label: 'Modal yang harus disiapkan',
-      rating: result ? rate(result.capex.total, settings.budget, settings.budget * 1.3) : null,
-      note: result ? `±Rp${(result.capex.total / 1e9).toFixed(1).replace('.', ',')} M` : '',
+      label: 'Uang yang harus disiapkan',
+      rating: result ? rate(result.capex.newMoney, settings.budget, settings.budget * 1.3) : null,
+      note: result ? (result.capex.newMoney > 0 ? `±${moneyShort(result.capex.newMoney)}` : 'tidak perlu uang baru') : '',
     },
     {
       key: 'payback',

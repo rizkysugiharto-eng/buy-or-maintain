@@ -13,7 +13,10 @@ const newId = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().t
 const jt = (v) => v * 1e6;
 
 // Isian awal rencana baru, mengikuti kebiasaan di laporan
+// Properti milik keluarga (sering di luar kawasan kos): sewa, kamar, biaya rutin & luas bangun dikosongkan
+// supaya diisi sesuai keadaan setempat, bukan memakai angka kos Malang.
 function planTemplate(property, type) {
+  const owned = !!property.owned;
   const base = {
     id: newId('plan'),
     propertyId: property.id,
@@ -22,24 +25,35 @@ function planTemplate(property, type) {
     transactionPct: 6.5,
     transactionAuto: true,
     extraCosts: [],
-    rooms: property.rooms || 10,
-    rentPerRoom: jt(1.5),
+    rooms: property.rooms || (owned ? null : 10),
+    rentPerRoom: owned ? null : jt(1.5),
     occupancyPct: 90,
-    opexFixedMonthly: jt(1),
-    opexPerRoomMonthly: jt(0.21),
+    opexFixedMonthly: owned ? null : jt(1),
+    opexPerRoomMonthly: owned ? null : jt(0.21),
     maintenancePct: 6,
-    pbbYearly: jt(5),
+    pbbYearly: owned ? null : jt(5),
     managementPct: 0,
     incomeTaxPct: 0,
     buildMonths: 0,
   };
-  if (type === 'beli') return { ...base, name: 'Beli jadi', extraCosts: [{ id: newId('x'), label: 'Perbaikan kecil', amount: jt(30) }] };
-  if (type === 'renovasi') return { ...base, name: 'Renovasi', buildMonths: 5, extraCosts: [{ id: newId('x'), label: 'Biaya renovasi', amount: jt(500) }] };
+  if (type === 'beli')
+    return {
+      ...base,
+      name: owned ? 'Sewakan apa adanya' : 'Beli jadi',
+      extraCosts: owned ? [] : [{ id: newId('x'), label: 'Perbaikan kecil', amount: jt(30) }],
+    };
+  if (type === 'renovasi')
+    return {
+      ...base,
+      name: owned ? 'Renovasi lalu sewakan' : 'Renovasi',
+      buildMonths: 5,
+      extraCosts: [{ id: newId('x'), label: 'Biaya renovasi', amount: jt(500) }],
+    };
   return {
     ...base,
-    name: 'Bangun kos baru',
+    name: owned ? 'Bangun lalu sewakan' : 'Bangun kos baru',
     buildMonths: 10,
-    buildArea: Math.round((property.landArea || 150) * 0.65 * 3),
+    buildArea: owned ? null : Math.round((property.landArea || 150) * 0.65 * 3),
     buildCostPerM2: jt(4.8),
     materialIds: [],
     furnishingPerRoom: jt(12),
@@ -75,8 +89,7 @@ export function DataProvider({ children }) {
       updatePlan: (id, patch) => patchList('plans', id, patch),
       updateMaterial: (id, patch) => patchList('materials', id, patch),
       updateSettings: (patch) => setData((d) => ({ ...d, settings: { ...d.settings, ...patch } })),
-      updateSource: (key, patch) =>
-        setData((d) => ({ ...d, sources: { ...d.sources, [key]: { ...d.sources?.[key], ...patch } } })),
+      updateSource: (key, patch) => setData((d) => ({ ...d, sources: { ...d.sources, [key]: { ...d.sources?.[key], ...patch } } })),
       setTitle: (title) => setData((d) => ({ ...d, title })),
 
       addProperty: () => {
@@ -175,7 +188,9 @@ export function DataProvider({ children }) {
           const { data: next, added } = mergeData(current, incoming);
           saveBackup(current);
           setNotice({
-            message: added ? `${added} properti dari "${fileName}" sudah ditambahkan.` : `Semua properti di "${fileName}" sudah ada — tidak ada yang ditambahkan.`,
+            message: added
+              ? `${added} properti dari "${fileName}" sudah ditambahkan.`
+              : `Semua properti di "${fileName}" sudah ada — tidak ada yang ditambahkan.`,
             canUndo: added > 0,
           });
           return next;

@@ -303,6 +303,28 @@ export default function SettingsPage() {
           />
         </div>
 
+        <h3>Kalau properti milik keluarga dijual</h3>
+        <div className="form-grid">
+          <NumberField
+            label="PPh final penjual"
+            unit="%"
+            value={s.saleTaxPct}
+            onChange={set('saleTaxPct')}
+            help="2,5% dari harga jual (PP No. 34/2016); 1% untuk rumah sederhana"
+            min={0}
+            max={10}
+          />
+          <NumberField
+            label="Komisi makelar"
+            unit="%"
+            value={s.saleAgentPct}
+            onChange={set('saleAgentPct')}
+            help="Isi kalau menjual lewat makelar/agen (umumnya 2–3%)"
+            min={0}
+            max={10}
+          />
+        </div>
+
         <h3>Aturan biaya surat-surat</h3>
         <p className="small muted">
           BPHTB & NPOPTKP mengikuti <b>Kota/Kabupaten</b> tiap properti (atur di halaman properti). Dua isian pertama di bawah hanya dipakai untuk

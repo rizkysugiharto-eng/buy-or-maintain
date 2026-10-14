@@ -9,7 +9,7 @@ import { useData } from '../context/DataContext.jsx';
 import { regionRules } from '../data/regions.js';
 import { SHS_MAINTENANCE, SHS_SOURCE } from '../data/shs.js';
 import { materialPricesVerified } from '../data/sources.js';
-import { PLAN_TYPES, SCENARIOS, analyze, materialCostPerM2 } from '../lib/calc.js';
+import { SCENARIOS, analyze, materialCostPerM2, planTypesFor, saleProceeds } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatNumber, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 
 function Line({ label, value, strong, minus }) {
@@ -28,12 +28,15 @@ export function ResultDetail({ plan, property, material, settings }) {
   const r = analyze(plan, property, material, settings);
   const { capex: c, income: inc } = r;
   const area = r.params.buildArea || Number(property?.buildingArea) || 0;
+  const owned = r.params.owned;
   return (
     <>
+      {r.incomplete && <p className="warn-text">Isi jumlah kamar/unit dan sewa per bulan dulu — hasil di bawah belum bisa dipakai.</p>}
       <div className="stats big">
         <div className="stat">
-          <span className="stat-label">Total modal</span>
-          <strong className="stat-value">{formatCompact(c.total, 2)}</strong>
+          <span className="stat-label">{owned ? 'Uang baru yang dikeluarkan' : 'Total modal'}</span>
+          <strong className="stat-value">{formatCompact(owned ? c.newMoney : c.total, 2)}</strong>
+          {owned && <span className="stat-sub">+ nilai tanah {formatCompact(c.purchase, 1)}</span>}
         </div>
         <div className="stat">
           <span className="stat-label">Uang bersih / bulan</span>
@@ -87,8 +90,8 @@ export function ResultDetail({ plan, property, material, settings }) {
           <h3>Rincian modal</h3>
           <table className="table numbers compact">
             <tbody>
-              <Line label="Harga beli" value={c.purchase} />
-              <Line label={`Surat-surat (${formatPercent(c.transactionPct)})`} value={c.transaction} />
+              <Line label={owned ? 'Nilai tanah (tidak jadi dijual)' : 'Harga beli'} value={c.purchase} />
+              {!owned && <Line label={`Surat-surat (${formatPercent(c.transactionPct)})`} value={c.transaction} />}
               {c.construction > 0 && <Line label="Konstruksi" value={c.construction} />}
               {c.furnishing > 0 && <Line label="Isi kamar" value={c.furnishing} />}
               {c.design > 0 && <Line label="Desain, izin, pengawasan" value={c.design} />}
@@ -116,10 +119,24 @@ export function ResultDetail({ plan, property, material, settings }) {
         </div>
       </div>
       <ul className="facts">
+        {owned && (
+          <li>
+            Dibanding <b>dijual</b> lalu uangnya{c.newMoney > 0 ? ' (plus uang bangun)' : ''} ditaruh di SBN ritel{' '}
+            {formatPercent(settings.benchmarkSbn)}: {r.vsSbnMonthly >= 0 ? 'lebih untung' : 'lebih rugi'}{' '}
+            <b>±{formatCompact(Math.abs(r.vsSbnMonthly))}</b> per bulan.
+            {r.vsSbnMonthly < 0 ? ' Dari sisi uang sewa saja, menjual lebih menguntungkan — kecuali harga tanahnya diperkirakan naik.' : ''}
+          </li>
+        )}
+        {owned && r.newMoneyPaybackYears !== undefined && c.newMoney > 0 && (
+          <li>
+            Uang baru {formatCompact(c.newMoney, 1)} kembali dalam <b>{formatYears(r.newMoneyPaybackYears, settings.maxYears)}</b> (tanpa menghitung
+            nilai tanah).
+          </li>
+        )}
         <li>
           Hasil bersih <b>{formatPercent(r.netYield)}</b> per tahun — setiap Rp100 juta modal kembali ±{formatCompact(r.per100jt)} per tahun.
         </li>
-        {r.breakEvenOccupancy != null && (
+        {r.breakEvenOccupancy > 0 && (
           <li>
             Biaya rutin sudah tertutup kalau minimal <b>{formatPercent(r.breakEvenOccupancy, 0)}</b> kamar terisi (±
             {Math.ceil((r.breakEvenOccupancy / 100) * r.params.rooms)} dari {r.params.rooms} kamar).
@@ -130,7 +147,7 @@ export function ResultDetail({ plan, property, material, settings }) {
             Supaya hasil minimal {formatPercent(settings.targetYieldLow)}, harga beli maksimal <b>{formatCompact(r.maxPrice, 2)}</b>.
           </li>
         )}
-        {r.roomCost != null && <li>Modal per kamar ±{formatCompact(r.roomCost)}.</li>}
+        {r.roomCost != null && !owned && <li>Modal per kamar ±{formatCompact(r.roomCost)}.</li>}
         {area > 0 && inc.maintenance > 0 && (
           <li>
             Perawatan ±{formatCompact(inc.maintenance / area)} per m² bangunan per tahun. Sebagai batas atas: Pemkot Malang menganggarkan{' '}
@@ -170,7 +187,11 @@ export default function PlanPage() {
   const isBuild = plan.type === 'bangun';
   const chosen = plan.materialIds ?? [];
   // Warna mengikuti paket material, sama dengan di halaman Banding Material
-  const colorOf = (v) => Math.max(0, data.materials.findIndex((m) => m.id === v.material?.id));
+  const colorOf = (v) =>
+    Math.max(
+      0,
+      data.materials.findIndex((m) => m.id === v.material?.id),
+    );
 
   function toggleMaterial(mid) {
     set('materialIds')(chosen.includes(mid) ? chosen.filter((x) => x !== mid) : [...chosen, mid]);
@@ -185,7 +206,7 @@ export default function PlanPage() {
         <div>
           <h1>{plan.name}</h1>
           <p className="muted">
-            {PLAN_TYPES[plan.type].label} · {property.name}
+            {planTypesFor(property)[plan.type].label} · {property.name}
           </p>
         </div>
         <div className="btn-row">
@@ -219,7 +240,7 @@ export default function PlanPage() {
                 label="Jenis rencana"
                 value={plan.type}
                 onChange={set('type')}
-                options={Object.entries(PLAN_TYPES).map(([value, t]) => ({ value, label: t.label, hint: t.hint }))}
+                options={Object.entries(planTypesFor(property)).map(([value, t]) => ({ value, label: t.label, hint: t.hint }))}
               />
             </div>
           </section>
@@ -228,51 +249,84 @@ export default function PlanPage() {
             <h2>
               <span className="step">2</span> Modal
             </h2>
-            <div className="form-grid">
-              <MoneyField
-                label="Harga beli"
-                value={plan.purchasePrice}
-                onChange={set('purchasePrice')}
-                placeholder="Kosong = harga diminta"
-                help={plan.purchasePrice == null ? `Memakai harga yang diminta: ${formatCompact(property.askingPrice, 2)}. Isi kalau mau coba harga tawar.` : null}
-              />
-              {plan.transactionAuto ? (
-                <div className="field">
-                  <span className="field-label">Biaya surat-surat</span>
+            {property.owned ? (
+              <div className="form-grid">
+                <div className="field wide">
+                  <span className="field-label">Nilai tanah/bangunan (tidak jadi dijual)</span>
                   <div className="readout">
-                    <strong>{formatCompact(current?.result.capex.transaction, 1)}</strong>
-                    <span className="muted"> ≈ {formatPercent(current?.result.capex.transactionPct)} dari harga</span>
+                    <strong>{formatCompact(saleProceeds(property, data.settings)?.net ?? 0, 2)}</strong>
+                    <span className="muted"> bersih setelah PPh final {formatPercent(data.settings.saleTaxPct)}</span>
                   </div>
                   <span className="field-help">
-                    BPHTB {formatPercent(region.bphtbPct, 0)} × (harga − {formatCompact(region.npoptkp)}) + PPAT maks. 1% + balik nama BPN · {region.name}
+                    Sudah milik keluarga, jadi tidak ada harga beli & surat-surat. Nilai jualnya tetap dihitung sebagai modal supaya hasilnya bisa
+                    dibandingkan dengan menjual. Ubah di halaman properti → Perkiraan harga kalau dijual.
                   </span>
                 </div>
-              ) : (
-                <NumberField
-                  label="Biaya surat-surat"
-                  unit="%"
-                  value={plan.transactionPct}
-                  onChange={set('transactionPct')}
-                  help="Pajak beli (BPHTB), notaris/PPAT"
-                  min={0}
-                  max={30}
+              </div>
+            ) : (
+              <div className="form-grid">
+                <MoneyField
+                  label="Harga beli"
+                  value={plan.purchasePrice}
+                  onChange={set('purchasePrice')}
+                  placeholder="Kosong = harga diminta"
+                  help={
+                    plan.purchasePrice == null
+                      ? `Memakai harga yang diminta: ${formatCompact(property.askingPrice, 2)}. Isi kalau mau coba harga tawar.`
+                      : null
+                  }
                 />
-              )}
-              <label className="check wide">
-                <input type="checkbox" checked={!!plan.transactionAuto} onChange={(e) => set('transactionAuto')(e.target.checked)} />
-                <span>
-                  Hitung biaya surat-surat otomatis sesuai aturan {region.name} (BPHTB & NPOPTKP dari aturan daerah di halaman properti, honor
-                  PPAT PP No. 24/2016). Matikan kalau sudah dapat angka pasti dari notaris.
-                </span>
-              </label>
-            </div>
+                {plan.transactionAuto ? (
+                  <div className="field">
+                    <span className="field-label">Biaya surat-surat</span>
+                    <div className="readout">
+                      <strong>{formatCompact(current?.result.capex.transaction, 1)}</strong>
+                      <span className="muted"> ≈ {formatPercent(current?.result.capex.transactionPct)} dari harga</span>
+                    </div>
+                    <span className="field-help">
+                      BPHTB {formatPercent(region.bphtbPct, 0)} × (harga − {formatCompact(region.npoptkp)}) + PPAT maks. 1% + balik nama BPN ·{' '}
+                      {region.name}
+                    </span>
+                  </div>
+                ) : (
+                  <NumberField
+                    label="Biaya surat-surat"
+                    unit="%"
+                    value={plan.transactionPct}
+                    onChange={set('transactionPct')}
+                    help="Pajak beli (BPHTB), notaris/PPAT"
+                    min={0}
+                    max={30}
+                  />
+                )}
+                <label className="check wide">
+                  <input type="checkbox" checked={!!plan.transactionAuto} onChange={(e) => set('transactionAuto')(e.target.checked)} />
+                  <span>
+                    Hitung biaya surat-surat otomatis sesuai aturan {region.name} (BPHTB & NPOPTKP dari aturan daerah di halaman properti, honor PPAT
+                    PP No. 24/2016). Matikan kalau sudah dapat angka pasti dari notaris.
+                  </span>
+                </label>
+              </div>
+            )}
 
             {isBuild && (
               <>
                 <h3>Biaya bangun</h3>
                 <div className="form-grid">
-                  <NumberField label="Luas bangunan baru" unit="m²" value={plan.buildArea} onChange={set('buildArea')} help="Total semua lantai" min={0} />
-                  <MoneyField label="Isi kamar per kamar" value={plan.furnishingPerRoom} onChange={set('furnishingPerRoom')} help="AC, kasur, lemari" />
+                  <NumberField
+                    label="Luas bangunan baru"
+                    unit="m²"
+                    value={plan.buildArea}
+                    onChange={set('buildArea')}
+                    help="Total semua lantai"
+                    min={0}
+                  />
+                  <MoneyField
+                    label="Isi kamar per kamar"
+                    value={plan.furnishingPerRoom}
+                    onChange={set('furnishingPerRoom')}
+                    help="AC, kasur, lemari"
+                  />
                 </div>
                 <fieldset className="field wide">
                   <legend>Paket material yang mau dibandingkan</legend>
@@ -295,8 +349,8 @@ export default function PlanPage() {
                         onChange={(e) => set('regionalPriceAdjust')(e.target.checked)}
                       />
                       <span>
-                        Sesuaikan harga paket ke harga {region.name} (× {formatNumber(region.buildIndex, 2)}, acuan HSBGN). Matikan kalau harga paketnya
-                        sudah dari RAB kontraktor setempat.
+                        Sesuaikan harga paket ke harga {region.name} (× {formatNumber(region.buildIndex, 2)}, acuan HSBGN). Matikan kalau harga
+                        paketnya sudah dari RAB kontraktor setempat.
                       </span>
                     </label>
                   )}
@@ -307,13 +361,20 @@ export default function PlanPage() {
                 </fieldset>
                 {chosen.length === 0 && (
                   <div className="form-grid">
-                    <MoneyField label="Biaya bangun per m²" value={plan.buildCostPerM2} onChange={set('buildCostPerM2')} help="Dipakai kalau belum memilih paket material" />
+                    <MoneyField
+                      label="Biaya bangun per m²"
+                      value={plan.buildCostPerM2}
+                      onChange={set('buildCostPerM2')}
+                      help="Dipakai kalau belum memilih paket material"
+                    />
                   </div>
                 )}
               </>
             )}
 
-            <h3>{plan.type === 'renovasi' ? 'Rincian biaya renovasi' : isBuild ? 'Biaya lain (bongkar, pemasaran, cadangan)' : 'Perbaikan / biaya lain'}</h3>
+            <h3>
+              {plan.type === 'renovasi' ? 'Rincian biaya renovasi' : isBuild ? 'Biaya lain (bongkar, pemasaran, cadangan)' : 'Perbaikan / biaya lain'}
+            </h3>
             <CostList items={plan.extraCosts ?? []} onChange={set('extraCosts')} />
           </section>
 
@@ -331,23 +392,66 @@ export default function PlanPage() {
                 min={0}
                 max={120}
               />
-              <NumberField label="Jumlah kamar" unit="kamar" value={plan.rooms} onChange={set('rooms')} min={0} />
+              <NumberField
+                label="Jumlah kamar / unit"
+                unit="unit"
+                value={plan.rooms}
+                onChange={set('rooms')}
+                min={0}
+                help={property.owned ? 'Disewakan utuh (satu rumah / lahan) = 1' : null}
+              />
               <MoneyField
-                label="Sewa per kamar per bulan"
+                label="Sewa per kamar / unit per bulan"
                 value={plan.rentPerRoom}
                 onChange={set('rentPerRoom')}
-                help={isBuild && chosen.length ? 'Untuk paket Standar; paket lain bisa lebih mahal/murah' : null}
+                help={
+                  isBuild && chosen.length ? 'Untuk paket Standar; paket lain bisa lebih mahal/murah' : property.owned ? 'Sewa per tahun ÷ 12' : null
+                }
               />
-              <NumberField label="Rata-rata kamar terisi" unit="%" value={plan.occupancyPct} onChange={set('occupancyPct')} help="Kos ramai umumnya 88–92%" min={0} max={100} />
+              <NumberField
+                label="Rata-rata kamar terisi"
+                unit="%"
+                value={plan.occupancyPct}
+                onChange={set('occupancyPct')}
+                help="Kos ramai umumnya 88–92%"
+                min={0}
+                max={100}
+              />
             </div>
             <details className="advanced">
               <summary>Biaya rutin & pengaturan lanjutan</summary>
               <div className="form-grid">
-                <MoneyField label="Biaya tetap per bulan" value={plan.opexFixedMonthly} onChange={set('opexFixedMonthly')} help="Penjaga/kebersihan, wifi dasar" />
-                <MoneyField label="Biaya per kamar per bulan" value={plan.opexPerRoomMonthly} onChange={set('opexPerRoomMonthly')} help="Air, listrik bersama (listrik kamar pakai token penyewa)" />
-                <NumberField label="Perawatan" unit="% sewa" value={plan.maintenancePct} onChange={set('maintenancePct')} help="Bisa diganti oleh paket material" min={0} max={50} />
+                <MoneyField
+                  label="Biaya tetap per bulan"
+                  value={plan.opexFixedMonthly}
+                  onChange={set('opexFixedMonthly')}
+                  help="Penjaga/kebersihan, wifi dasar"
+                />
+                <MoneyField
+                  label="Biaya per kamar per bulan"
+                  value={plan.opexPerRoomMonthly}
+                  onChange={set('opexPerRoomMonthly')}
+                  help="Air, listrik bersama (listrik kamar pakai token penyewa)"
+                />
+                <NumberField
+                  label="Perawatan"
+                  unit="% sewa"
+                  value={plan.maintenancePct}
+                  onChange={set('maintenancePct')}
+                  help="Bisa diganti oleh paket material"
+                  min={0}
+                  max={50}
+                />
                 <MoneyField label="PBB per tahun" value={plan.pbbYearly} onChange={set('pbbYearly')} />
-                <NumberField label="Fee pengelola" unit="% sewa" value={plan.managementPct} onChange={set('managementPct')} help="Kalau dikelola orang lain, umumnya 10–15%" min={0} max={50} />
+                <NumberField
+                  label="Fee pengelola"
+                  unit="% sewa"
+                  value={plan.managementPct}
+                  onChange={set('managementPct')}
+                  help="Kalau dikelola orang lain, umumnya 10–15%"
+                  min={0}
+                  max={50}
+                />
                 <NumberField
                   label="Pajak penghasilan kos"
                   unit="% sewa"
@@ -359,8 +463,22 @@ export default function PlanPage() {
                 />
                 {isBuild && (
                   <>
-                    <NumberField label="Desain, izin (PBG), pengawasan" unit="% konstruksi" value={plan.designPct} onChange={set('designPct')} min={0} max={30} />
-                    <NumberField label="Cadangan tak terduga" unit="% konstruksi" value={plan.contingencyPct} onChange={set('contingencyPct')} min={0} max={50} />
+                    <NumberField
+                      label="Desain, izin (PBG), pengawasan"
+                      unit="% konstruksi"
+                      value={plan.designPct}
+                      onChange={set('designPct')}
+                      min={0}
+                      max={30}
+                    />
+                    <NumberField
+                      label="Cadangan tak terduga"
+                      unit="% konstruksi"
+                      value={plan.contingencyPct}
+                      onChange={set('contingencyPct')}
+                      min={0}
+                      max={50}
+                    />
                   </>
                 )}
               </div>

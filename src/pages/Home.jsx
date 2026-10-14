@@ -8,7 +8,7 @@ import { CashflowChart, HBarChart, Legend } from '../components/Charts.jsx';
 import { RatingBadge } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
-import { PLAN_TYPES, reportCard } from '../lib/calc.js';
+import { planTypesFor, reportCard, saleProceeds } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 import { rowLabel, shortName } from '../lib/labels.js';
 import { SOURCES, checkedCount } from '../data/sources.js';
@@ -42,8 +42,7 @@ function ChartBlock({ number, title, help, children, meaning }) {
   );
 }
 
-const best = (rows, get, lower = false) =>
-  rows.filter((r) => get(r) != null).sort((a, b) => (lower ? get(a) - get(b) : get(b) - get(a)))[0];
+const best = (rows, get, lower = false) => rows.filter((r) => get(r) != null).sort((a, b) => (lower ? get(a) - get(b) : get(b) - get(a)))[0];
 
 export default function Home() {
   const { data, analysis, loadExample, addProperty, prefs, setPref } = useData();
@@ -87,11 +86,14 @@ export default function Home() {
   }
 
   const colorOf = (property) => properties.findIndex((p) => p.id === property.id);
+  // Rencana yang sewanya belum diisi tidak ikut dibandingkan
   const cards = properties.map((property) => {
-    const row = primaryRow(analysis, property);
-    return { property, row, card: reportCard(property, row?.result, settings) };
+    const found = primaryRow(analysis, property);
+    const incomplete = !!found?.result.incomplete;
+    const row = incomplete ? null : found;
+    return { property, row, incomplete, card: reportCard(property, row?.result, settings) };
   });
-  const rows = analysis.rows;
+  const rows = analysis.rows.filter((r) => !r.result.incomplete);
   const bar = (get) => rows.map((r) => ({ label: rowLabel(r), value: get(r), colorIndex: colorOf(r.property), row: r }));
 
   const fastest = best(rows, (r) => r.result.paybackYears, true);
@@ -108,7 +110,9 @@ export default function Home() {
   const names = (list) => list.map((r) => shortName(r.property)).join(', ');
   const benchmarkMeaning = primaryRows.length
     ? [
-        aboveSbn.length ? `${names(aboveSbn)} menghasilkan lebih dari SBN ritel.` : `Semua pilihan menghasilkan lebih kecil dari SBN ritel (${formatPercent(settings.benchmarkSbn)}/tahun).`,
+        aboveSbn.length
+          ? `${names(aboveSbn)} menghasilkan lebih dari SBN ritel.`
+          : `Semua pilihan menghasilkan lebih kecil dari SBN ritel (${formatPercent(settings.benchmarkSbn)}/tahun).`,
         aboveDeposit.length ? `${names(aboveDeposit)} masih di atas deposito (${formatPercent(settings.benchmarkDeposit, 2)}).` : '',
         'Kelebihan kos dibanding SBN: harga tanahnya bisa naik — itu belum dihitung di sini.',
       ]
@@ -146,12 +150,20 @@ export default function Home() {
       <section className="card intinya">
         <h2>Intinya</h2>
         <ul>
-          {cards.map(({ property, row, card }) => (
+          {cards.map(({ property, row, card, incomplete }) => (
             <li key={property.id}>
-              <b>{shortName(property)}</b> — {card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : 'belum dinilai'}{' '}
-              {row
-                ? `Modal ±${formatCompact(row.result.capex.total, 1)}, uang bersih ±${formatCompact(row.result.noiMonthly)}/bulan, modal kembali ${formatYears(row.result.paybackYears, settings.maxYears)}${row.result.incomeStartMonth ? ` (mulai dapat uang setelah ${formatMonths(row.result.incomeStartMonth)})` : ', uang masuk sejak bulan pertama'}.`
-                : 'Belum ada rencana — buka propertinya lalu tambahkan rencana.'}
+              <b>{shortName(property)}</b> —{' '}
+              {card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : 'belum dinilai'}{' '}
+              {property.owned &&
+                saleProceeds(property, settings) &&
+                `Kalau dijual terima bersih ±${formatCompact(saleProceeds(property, settings).net, 1)}. `}
+              {property.owned && row
+                ? `${planTypesFor(property)[row.plan.type].label}: ${row.result.capex.newMoney > 0 ? `uang baru ±${formatCompact(row.result.capex.newMoney, 1)}` : 'tanpa uang baru'}, uang bersih ±${formatCompact(row.result.noiMonthly)}/bulan — ${row.result.vsSbnMonthly >= 0 ? 'lebih untung' : 'lebih rugi'} ±${formatCompact(Math.abs(row.result.vsSbnMonthly))}/bulan dibanding dijual lalu ditaruh di SBN.`
+                : row
+                  ? `Modal ±${formatCompact(row.result.capex.total, 1)}, uang bersih ±${formatCompact(row.result.noiMonthly)}/bulan, modal kembali ${formatYears(row.result.paybackYears, settings.maxYears)}${row.result.incomeStartMonth ? ` (mulai dapat uang setelah ${formatMonths(row.result.incomeStartMonth)})` : ', uang masuk sejak bulan pertama'}.`
+                  : incomplete
+                    ? 'Sewa atau jumlah kamar/unit di rencananya belum diisi.'
+                    : 'Belum ada rencana — buka propertinya lalu tambahkan rencana.'}
               {property.verdictNote && <span className="muted"> {property.verdictNote}</span>}
             </li>
           ))}
@@ -159,21 +171,34 @@ export default function Home() {
       </section>
 
       <div className="property-cards">
-        {cards.map(({ property, row, card }, i) => (
-          <Link key={property.id} to={`/properti/${property.id}`} className="card property-card" style={{ '--accent': `var(--series-${(i % 8) + 1})` }}>
+        {cards.map(({ property, row, card, incomplete }, i) => (
+          <Link
+            key={property.id}
+            to={`/properti/${property.id}`}
+            className="card property-card"
+            style={{ '--accent': `var(--series-${(i % 8) + 1})` }}
+          >
             <div className="property-card-head">
               <div>
                 <h3>{property.name}</h3>
                 <p className="muted small">
                   {regionRules(property, settings).name} · {property.askingPrice ? formatCompact(property.askingPrice, 1) : 'harga belum diisi'}
-                  {row ? ` · ${PLAN_TYPES[row.plan.type].label.toLowerCase()}: ${rowLabel(row, { withProperty: false })}` : ''}
+                  {row ? ` · ${planTypesFor(property)[row.plan.type].label.toLowerCase()}: ${rowLabel(row, { withProperty: false })}` : ''}
                 </p>
               </div>
               {card.verdict && <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge>}
             </div>
             {row ? (
               <div className="stats">
-                <Stat label="Total modal" value={formatCompact(row.result.capex.total, 1)} />
+                {property.owned ? (
+                  <Stat
+                    label="Uang baru"
+                    value={formatCompact(row.result.capex.newMoney, 1)}
+                    sub={`+ nilai tanah ${formatCompact(row.result.capex.purchase, 1)}`}
+                  />
+                ) : (
+                  <Stat label="Total modal" value={formatCompact(row.result.capex.total, 1)} />
+                )}
                 <Stat label="Uang bersih / bulan" value={formatCompact(row.result.noiMonthly)} />
                 <Stat
                   label="Modal kembali"
@@ -183,7 +208,7 @@ export default function Home() {
                 <Stat label="Mulai dapat uang" value={formatMonths(row.result.incomeStartMonth)} />
               </div>
             ) : (
-              <p className="muted">Belum ada rencana.</p>
+              <p className="muted">{incomplete ? 'Sewa di rencananya belum diisi.' : 'Belum ada rencana.'}</p>
             )}
             <span className="card-link">
               Lihat detail <Icon name="chevron" size={14} />
@@ -258,8 +283,18 @@ export default function Home() {
             <HBarChart
               data={[
                 ...primaryRows.map((r) => ({ label: rowLabel(r), value: r.result.per100jt, colorIndex: colorOf(r.property) })),
-                { label: `SBN ritel (${formatPercent(settings.benchmarkSbn)})`, value: settings.benchmarkSbn * 1e6, color: 'var(--text-muted)', reference: true },
-                { label: `Deposito bank (${formatPercent(settings.benchmarkDeposit, 2)})`, value: settings.benchmarkDeposit * 1e6, color: 'var(--axis)', reference: true },
+                {
+                  label: `SBN ritel (${formatPercent(settings.benchmarkSbn)})`,
+                  value: settings.benchmarkSbn * 1e6,
+                  color: 'var(--text-muted)',
+                  reference: true,
+                },
+                {
+                  label: `Deposito bank (${formatPercent(settings.benchmarkDeposit, 2)})`,
+                  value: settings.benchmarkDeposit * 1e6,
+                  color: 'var(--axis)',
+                  reference: true,
+                },
               ]}
               formatValue={(v) => formatCompact(v)}
             />
@@ -318,7 +353,10 @@ export default function Home() {
                   number={4}
                   title="Dari setiap Rp100 juta modal, berapa yang kembali per tahun?"
                   help="Cara paling adil membandingkan pilihan yang modalnya berbeda-beda."
-                  meaning={productive && `Paling produktif: ${rowLabel(productive)} — ±${formatCompact(productive.result.per100jt)} per tahun (${formatPercent(productive.result.netYield)}).`}
+                  meaning={
+                    productive &&
+                    `Paling produktif: ${rowLabel(productive)} — ±${formatCompact(productive.result.per100jt)} per tahun (${formatPercent(productive.result.netYield)}).`
+                  }
                 >
                   <HBarChart data={bar((r) => r.result.per100jt)} formatValue={(v) => formatCompact(v)} />
                 </ChartBlock>
@@ -336,7 +374,9 @@ export default function Home() {
                     .filter((c) => c.row)
                     .map((c) => ({ key: c.property.id, label: rowLabel(c.row), colorIndex: colorOf(c.property), yearly: c.row.result.yearly }))}
                 />
-                <Legend items={cards.filter((c) => c.row).map((c) => ({ key: c.property.id, label: rowLabel(c.row), colorIndex: colorOf(c.property) }))} />
+                <Legend
+                  items={cards.filter((c) => c.row).map((c) => ({ key: c.property.id, label: rowLabel(c.row), colorIndex: colorOf(c.property) }))}
+                />
               </ChartBlock>
 
               <details className="card details-card">
@@ -372,7 +412,8 @@ export default function Home() {
                   </table>
                 </div>
                 <p className="small muted">
-                  Hasil bersih = uang bersih setahun ÷ total modal. Belum memperhitungkan kenaikan harga tanah{settings.rentGrowthPct ? '' : ' dan kenaikan sewa'}.
+                  Hasil bersih = uang bersih setahun ÷ total modal. Belum memperhitungkan kenaikan harga tanah
+                  {settings.rentGrowthPct ? '' : ' dan kenaikan sewa'}.
                 </p>
               </details>
             </>

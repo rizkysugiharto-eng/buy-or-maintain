@@ -1897,3 +1897,15 @@ a {
     box-shadow: none;
   }
 }
+
+/* Properti milik keluarga: pembanding "kalau dijual" */
+.sale-box {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+.sale-box p {
+  margin: 4px 0 0;
+}
