@@ -1305,6 +1305,21 @@ a {
   margin-top: 16px;
 }
 
+/* ===== Pesan kalau halaman error ===== */
+.crash {
+  border-left: 5px solid var(--critical-text);
+}
+
+.crash-detail {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text-secondary);
+}
+
 /* ===== Dialog ===== */
 .modal-backdrop {
   position: fixed;

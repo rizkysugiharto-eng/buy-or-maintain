@@ -1,7 +1,8 @@
 // Daftar halaman + pembuka link bagikan (#/?data=...).
 
 import { useEffect, useRef } from 'react';
-import { Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Layout from './components/Layout.jsx';
 import { useData } from './context/DataContext.jsx';
 import { decodeShare } from './lib/storage.js';
@@ -33,18 +34,21 @@ function SharedLinkLoader() {
 }
 
 export default function App() {
+  const location = useLocation();
   return (
     <Layout>
       <SharedLinkLoader />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/properti" element={<Properties />} />
-        <Route path="/properti/:id" element={<PropertyPage />} />
-        <Route path="/rencana/:id" element={<PlanPage />} />
-        <Route path="/material" element={<MaterialPage />} />
-        <Route path="/pengaturan" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary key={location.pathname}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/properti" element={<Properties />} />
+          <Route path="/properti/:id" element={<PropertyPage />} />
+          <Route path="/rencana/:id" element={<PlanPage />} />
+          <Route path="/material" element={<MaterialPage />} />
+          <Route path="/pengaturan" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Layout>
   );
 }
