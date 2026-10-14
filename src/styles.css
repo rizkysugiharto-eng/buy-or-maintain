@@ -1402,6 +1402,106 @@ a {
   margin-bottom: 6px;
 }
 
+/* ===== Sumber angka ===== */
+.source-hint {
+  border-left: 4px solid var(--warning-text);
+  background: var(--warning-soft);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.source-hint.done {
+  border-left-color: var(--good-text);
+  background: var(--good-soft);
+}
+
+#sumber-angka {
+  /* jangan tertutup header yang menempel di atas */
+  scroll-margin-top: 120px;
+}
+
+.source-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.source-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.source-bar span {
+  display: block;
+  height: 100%;
+  background: var(--good-text);
+}
+
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.source-item {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warning-text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+}
+
+.source-item.checked {
+  border-left-color: var(--good-text);
+}
+
+.source-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.source-head h3 {
+  margin: 4px 0;
+  flex: 1 1 240px;
+}
+
+.source-status {
+  flex: 0 1 260px;
+}
+
+.source-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 10px;
+  font-size: 0.9rem;
+}
+
+.source-meta dt {
+  color: var(--text-muted);
+}
+
+.source-meta dd {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .source-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .source-meta dd {
+    margin-bottom: 6px;
+  }
+}
+
 /* ===== Pesan kalau halaman error ===== */
 .crash {
   border-left: 5px solid var(--critical-text);

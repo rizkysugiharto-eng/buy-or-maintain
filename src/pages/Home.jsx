@@ -9,6 +9,7 @@ import { primaryRow, useData } from '../context/DataContext.jsx';
 import { PLAN_TYPES, reportCard } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 import { rowLabel, shortName } from '../lib/labels.js';
+import { SOURCES, checkedCount } from '../data/sources.js';
 
 function Stat({ label, value, sub }) {
   return (
@@ -93,6 +94,15 @@ export default function Home() {
 
       <p className="guide-hint no-print">
         Baru pertama kali? Baca <Link to="/cara-pakai">Cara Pakai</Link> — alur pengisian dan cara membaca angkanya.
+      </p>
+
+      <p className={`source-hint${checkedCount(data.sources) === SOURCES.length ? ' done' : ''}`}>
+        <b>
+          {checkedCount(data.sources)} dari {SOURCES.length} angka
+        </b>{' '}
+        sudah dicek dari sumber resmi.{' '}
+        {checkedCount(data.sources) < SOURCES.length && 'Sisanya masih perkiraan — pakai hasil ini untuk menyaring, bukan dasar membayar DP. '}
+        <Link to="/pengaturan?bagian=sumber">Lihat sumber angka</Link>
       </p>
 
       <section className="card intinya">

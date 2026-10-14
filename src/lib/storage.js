@@ -23,6 +23,7 @@ export function isValidData(data) {
 export function normalizeData(data) {
   return {
     ...data,
+    sources: data.sources ?? {},
     settings: {
       ...DEFAULT_SETTINGS,
       ...data.settings,
@@ -118,6 +119,7 @@ export function compactData(data) {
       return builtIn && same(m, builtIn) ? m.id : m;
     }),
     s: settings,
+    k: data.sources,
   });
 }
 
@@ -132,6 +134,7 @@ export function expandData(compact) {
       .map((m) => (typeof m === 'string' ? structuredClone(EXAMPLE_MATERIALS.find((x) => x.id === m)) : m))
       .filter(Boolean),
     settings: { ...structuredClone(DEFAULT_SETTINGS), ...compact.s },
+    sources: compact.k ?? {},
   };
 }
 

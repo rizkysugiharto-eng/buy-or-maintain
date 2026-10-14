@@ -201,7 +201,10 @@ export default function GuidePage() {
               </tr>
               <tr>
                 <th scope="row">Keadaan pesimis</th>
-                <td>Sewa turun, kamar lebih sering kosong, biaya naik. Pakai sebagai batas aman.</td>
+                <td>
+                  Sewa turun, kamar lebih sering kosong, biaya naik. Pakai sebagai batas aman. Isiannya dibanding keadaan normal: minus = turun,
+                  plus = naik (mis. sewa −10% → Rp1,7 jt jadi Rp1,53 jt; kamar terisi −12 poin → 92% jadi 80%).
+                </td>
               </tr>
               <tr>
                 <th scope="row">Grafik perjalanan uang</th>
@@ -242,8 +245,9 @@ export default function GuidePage() {
         <details className="faq">
           <summary>Angkanya bisa dipegang?</summary>
           <p>
-            Semua angka adalah perkiraan. Sebelum DP: minta mutasi rekening sewa 12 bulan, cek surat-surat lewat notaris/PPAT, dan minta
-            tukang/insinyur memeriksa bangunan.
+            Belum semuanya. Buka <b>Data & Asumsi → Sumber angka</b>: di sana tertulis asal setiap angka dan sumber resmi untuk
+            memastikannya (ZNT BPN, KJPP, HSPK Kota Malang, RAB kontraktor, mutasi rekening). Tandai “Sudah dicek” satu per satu; Ringkasan
+            menampilkan berapa yang sudah dicek. Sebelum DP: cek surat-surat lewat notaris/PPAT dan minta tukang/insinyur memeriksa bangunan.
           </p>
         </details>
       </section>

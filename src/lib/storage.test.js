@@ -33,11 +33,13 @@ describe('link bagikan', () => {
     data.plans[1].materialIds.push('mat-baru');
     data.settings.budget = 5_000_000_000;
     data.properties[0].checklist = { shm: true };
+    data.sources = { 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } };
     const opened = await decodeShare(await encodeShare(data));
     expect(results(opened)).toEqual(results(data));
     expect(opened.materials.map((m) => m.name)).toContain('Hebel A');
     expect(opened.settings.budget).toBe(5_000_000_000);
     expect(opened.properties[0].checklist).toEqual({ shm: true });
+    expect(opened.sources).toEqual({ 'harga-tanah': { status: 'dicek', note: 'ZNT BPN' } });
   });
 
   it('link data contoh pendek (< 1.600 karakter)', async () => {

@@ -265,6 +265,7 @@ export function exampleData() {
     plans: EXAMPLE_PLANS,
     materials: EXAMPLE_MATERIALS,
     settings: DEFAULT_SETTINGS,
+    sources: {},
   });
 }
 
@@ -276,5 +277,6 @@ export function emptyData() {
     plans: [],
     materials: EXAMPLE_MATERIALS,
     settings: DEFAULT_SETTINGS,
+    sources: {},
   });
 }

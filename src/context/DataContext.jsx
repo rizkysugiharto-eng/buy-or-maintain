@@ -74,6 +74,8 @@ export function DataProvider({ children }) {
       updatePlan: (id, patch) => patchList('plans', id, patch),
       updateMaterial: (id, patch) => patchList('materials', id, patch),
       updateSettings: (patch) => setData((d) => ({ ...d, settings: { ...d.settings, ...patch } })),
+      updateSource: (key, patch) =>
+        setData((d) => ({ ...d, sources: { ...d.sources, [key]: { ...d.sources?.[key], ...patch } } })),
       setTitle: (title) => setData((d) => ({ ...d, title })),
 
       addProperty: () => {

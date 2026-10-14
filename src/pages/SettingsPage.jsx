@@ -1,11 +1,14 @@
 // Data & asumsi: bagikan, simpan/buka file, unduh tabel Excel, dan asumsi hitungan.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShareDialog } from '../components/Layout.jsx';
 import { MoneyField, NumberField, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
 import { exampleData } from '../data/example.js';
+import { SOURCES, checkedCount } from '../data/sources.js';
+import { formatCompact, formatNumber } from '../lib/format.js';
 import { DEFAULT_SETTINGS } from '../lib/calc.js';
 import { downloadFile, readJsonFile } from '../lib/storage.js';
 
@@ -15,18 +18,119 @@ const csvCell = (v) => {
   return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-function ScenarioFields({ label, value, onChange }) {
+const signed = (v) => `${v > 0 ? '+' : ''}${formatNumber(v ?? 0, v % 1 ? 1 : 0)}`;
+
+// Contoh hitungan langsung di bawah tiap isian, supaya arti angka minus/plus jelas
+function ScenarioFields({ label, value, onChange, note }) {
   const set = (key) => (v) => onChange({ ...value, [key]: v ?? 0 });
+  const pct = (base, v) => base * (1 + (v ?? 0) / 100);
   return (
     <fieldset className="field wide scenario">
       <legend>{label}</legend>
+      <p className="small muted">{note}</p>
       <div className="form-grid">
-        <NumberField label="Sewa" unit="%" value={value.rentPct} onChange={set('rentPct')} min={-90} max={100} />
-        <NumberField label="Keterisian" unit="poin" value={value.occupancyPt} onChange={set('occupancyPt')} min={-100} max={100} />
-        <NumberField label="Biaya rutin" unit="%" value={value.opexPct} onChange={set('opexPct')} min={-90} max={200} />
-        <NumberField label="Biaya bangun/renovasi" unit="%" value={value.capexPct} onChange={set('capexPct')} min={-90} max={200} />
+        <NumberField
+          label="Sewa per kamar"
+          unit="%"
+          value={value.rentPct}
+          onChange={set('rentPct')}
+          min={-90}
+          max={100}
+          help={`${signed(value.rentPct)}% → sewa Rp1,7 jt jadi ${formatCompact(pct(1_700_000, value.rentPct), 2)}`}
+        />
+        <NumberField
+          label="Kamar terisi"
+          unit="poin"
+          value={value.occupancyPt}
+          onChange={set('occupancyPt')}
+          min={-100}
+          max={100}
+          help={`${signed(value.occupancyPt)} poin → terisi 92% jadi ${formatNumber(Math.min(100, Math.max(0, 92 + (value.occupancyPt ?? 0))))}%`}
+        />
+        <NumberField
+          label="Biaya rutin"
+          unit="%"
+          value={value.opexPct}
+          onChange={set('opexPct')}
+          min={-90}
+          max={200}
+          help={`${signed(value.opexPct)}% → Rp3,5 jt/bulan jadi ${formatCompact(pct(3_500_000, value.opexPct), 2)}`}
+        />
+        <NumberField
+          label="Biaya bangun/renovasi"
+          unit="%"
+          value={value.capexPct}
+          onChange={set('capexPct')}
+          min={-90}
+          max={200}
+          help={`${signed(value.capexPct)}% → Rp2 M jadi ${formatCompact(pct(2_000_000_000, value.capexPct), 2)}`}
+        />
       </div>
     </fieldset>
+  );
+}
+
+function SourcesSection() {
+  const { data, updateSource } = useData();
+  const sources = data.sources ?? {};
+  const done = checkedCount(sources);
+  return (
+    <section className="card" id="sumber-angka">
+      <h2>Sumber angka</h2>
+      <p className="muted">
+        Dari mana setiap angka berasal, dan sumber resmi untuk memastikannya. Tandai <b>Sudah dicek</b> setelah angkanya diganti dengan data
+        yang bisa dipegang, dan tulis buktinya di catatan.
+      </p>
+      <div className="source-progress" aria-label={`${done} dari ${SOURCES.length} sudah dicek`}>
+        <div className="source-bar">
+          <span style={{ width: `${(done / SOURCES.length) * 100}%` }} />
+        </div>
+        <strong>
+          {done} dari {SOURCES.length} sudah dicek
+        </strong>
+      </div>
+      <div className="source-list">
+        {SOURCES.map((src) => {
+          const state = sources[src.key] ?? {};
+          const checked = state.status === 'dicek';
+          return (
+            <div key={src.key} className={`source-item${checked ? ' checked' : ''}`}>
+              <div className="source-head">
+                <h3>{src.label}</h3>
+                <div className="segmented source-status" role="group" aria-label={`Status ${src.label}`}>
+                  <button type="button" className={`seg${!checked ? ' active' : ''}`} aria-pressed={!checked} onClick={() => updateSource(src.key, { status: 'perkiraan' })}>
+                    Perkiraan
+                  </button>
+                  <button
+                    type="button"
+                    className={`seg rating-baik${checked ? ' active' : ''}`}
+                    aria-pressed={checked}
+                    onClick={() => updateSource(src.key, { status: 'dicek' })}
+                  >
+                    Sudah dicek
+                  </button>
+                </div>
+              </div>
+              <dl className="source-meta">
+                <dt>Dipakai di</dt>
+                <dd>{src.usedIn}</dd>
+                <dt>Sumber sekarang</dt>
+                <dd>{src.now}</dd>
+                <dt>Cara memastikan</dt>
+                <dd>{src.verify}</dd>
+              </dl>
+              <TextField
+                label="Catatan / bukti"
+                value={state.note}
+                onChange={(note) => updateSource(src.key, { note })}
+                placeholder="Misal: RAB CV Maju Jaya, 20 Okt 2026 — Rp4,6 jt/m²"
+                wide
+              />
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -38,6 +142,15 @@ export default function SettingsPage() {
   const s = data.settings;
   const set = (key) => (value) => updateSettings({ [key]: value ?? DEFAULT_SETTINGS[key] });
   const stamp = new Date().toISOString().slice(0, 10);
+  const [params] = useSearchParams();
+
+  // Dibuka dari Ringkasan (?bagian=sumber) → langsung gulir ke Sumber angka
+  // (ditunda sebentar: kerangka halaman menggulir ke atas setiap pindah menu)
+  useEffect(() => {
+    if (params.get('bagian') !== 'sumber') return undefined;
+    const timer = setTimeout(() => document.getElementById('sumber-angka')?.scrollIntoView({ block: 'start' }), 50);
+    return () => clearTimeout(timer);
+  }, [params]);
 
   async function openFile(e) {
     const file = e.target.files?.[0];
@@ -132,12 +245,24 @@ export default function SettingsPage() {
           <NumberField label="Kenaikan biaya rutin per tahun" unit="%" value={s.costGrowthPct} onChange={set('costGrowthPct')} min={-20} max={30} />
           <NumberField label="Panjang grafik perjalanan uang" unit="tahun" value={s.chartYears} onChange={set('chartYears')} min={5} max={60} />
         </div>
-        <ScenarioFields label="Keadaan pesimis" value={s.scenarios.pesimis} onChange={(v) => updateSettings({ scenarios: { ...s.scenarios, pesimis: v } })} />
-        <ScenarioFields label="Keadaan optimis" value={s.scenarios.optimis} onChange={(v) => updateSettings({ scenarios: { ...s.scenarios, optimis: v } })} />
+        <ScenarioFields
+          label="Keadaan pesimis"
+          note="Seberapa jauh keadaan memburuk dibanding normal. Minus = turun, plus = naik. Kamar terisi memakai “poin” karena sudah berupa persen: 92% − 12 poin = 80%."
+          value={s.scenarios.pesimis}
+          onChange={(v) => updateSettings({ scenarios: { ...s.scenarios, pesimis: v } })}
+        />
+        <ScenarioFields
+          label="Keadaan optimis"
+          note="Seberapa jauh keadaan membaik dibanding normal. Kamar terisi maksimal 100%."
+          value={s.scenarios.optimis}
+          onChange={(v) => updateSettings({ scenarios: { ...s.scenarios, optimis: v } })}
+        />
         <button type="button" className="btn small" onClick={() => updateSettings(structuredClone(DEFAULT_SETTINGS))}>
           Kembalikan asumsi bawaan
         </button>
       </section>
+
+      <SourcesSection />
 
       <section className="card">
         <h2>Mulai ulang</h2>
