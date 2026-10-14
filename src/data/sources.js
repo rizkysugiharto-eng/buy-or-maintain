@@ -1,6 +1,10 @@
 // Daftar angka yang dipakai hitungan: dari mana asalnya sekarang, dan sumber resmi
 // untuk memastikannya. Statusnya (perkiraan / sudah dicek) diisi keluarga di menu Data & Asumsi.
 
+import { SHS_SOURCE } from './shs.js';
+
+const SHS_LINK = { label: SHS_SOURCE.label, url: SHS_SOURCE.url };
+
 export const SOURCES = [
   {
     key: 'data-penjual',
@@ -88,17 +92,17 @@ export const SOURCES = [
     label: 'Biaya bangun per m² (Ekonomis / Standar / Premium)',
     usedIn: 'Paket material',
     now: 'Rp4,0 / 4,8 / 6,0 jt/m². Sesuai kisaran kontraktor Malang (ekonomis Rp3–3,5 jt, standar Rp3,5–5 jt/m², 2025) dan perkiraan kos 2026 Rp5,5–6,5 jt/m² (Jakarta). Batas atas acuan pemerintah HSBGN Kota Malang (Pergub Jatim 34/2022): Rp6,48 jt/m² (≤2 lantai) dan Rp8,62 jt/m² (>2 lantai)',
-    verify: 'HSPK Kota Malang tahun berjalan + 2–3 RAB tertulis dari kontraktor lokal',
+    verify: '2–3 RAB tertulis dari kontraktor lokal; harga bahan & upahnya dicek ke Perwal Kota Malang 14/2025',
     where: 'Banding Material → komponen tiap paket (total = biaya per m²)',
     how: [
-      'Cari “HSPK Kota Malang” tahun berjalan (standar harga satuan Pemkot; biasanya di situs JDIH atau pengadaan Pemkot Malang).',
+      'Cek harga bahan & upah di Banding Material → “Pembanding resmi” (Perwal Kota Malang 14/2025, sudah dimasukkan).',
       'Siapkan gambar/denah sederhana + spesifikasi (lantai, dinding, atap, jumlah kamar mandi).',
       'Minta RAB tertulis dan rinci dari 2–3 kontraktor lokal dengan gambar & spesifikasi yang sama.',
-      'Biaya per m² = total RAB (tanpa isi kamar) ÷ luas bangunan. Bandingkan dengan HSPK.',
+      'Biaya per m² = total RAB (tanpa isi kamar) ÷ luas bangunan. Bandingkan harga bahan & upah di RAB dengan Perwal 14/2025.',
     ],
     links: [
       { label: 'Pergub Jatim 34/2022 (HSBGN Kota Malang)', url: 'https://dokumjdih.jatimprov.go.id/upload/45172/2022PERGUBJATIM034.pdf' },
-      { label: 'Perwali Kota Malang 14/2025 — Standar Harga Satuan', url: 'https://peraturan.bpk.go.id/Details/343269/perwali-kota-malang-no-14-tahun-2025' },
+      SHS_LINK,
       { label: 'detikProperti — estimasi biaya bangun kos 2026', url: 'https://www.detik.com/properti/berita/d-8341751/mau-bangun-kos-kosan-segini-estimasi-biaya-bangunnya-di-2026' },
     ],
   },
@@ -106,7 +110,7 @@ export const SOURCES = [
     key: 'komponen-material',
     label: 'Rincian harga per komponen material',
     usedIn: 'Banding Material',
-    now: 'Perkiraan — pembagian dicocokkan ke rentang persentase pekerjaan standar PU (pondasi 5–10%, struktur 25–35%, lantai 5–10%, dinding 7–10%, plafon 6–8%, atap 8–10%). Belum dari RAB',
+    now: 'Perkiraan — pembagian dicocokkan ke rentang persentase pekerjaan standar PU (pondasi 5–10%, struktur 25–35%, lantai 5–10%, dinding 7–10%, plafon 6–8%, atap 8–10%). Pembanding: 2 RAB Malang dan harga resmi bahan & upah Perwal Kota Malang 14/2025 (mis. hebel 10 cm Rp8.550/buah, semen 40 kg Rp68.350, pekerja Rp153.300/hari). Belum dari RAB bangun kos lengkap',
     verify: 'RAB kontraktor per pekerjaan (biaya ÷ luas bangunan); acuan AHSP Permen PUPR No. 1/2022',
     where: 'Banding Material → Daftar paket material → komponen',
     how: [
@@ -117,6 +121,7 @@ export const SOURCES = [
     ],
     links: [
       { label: 'Kepmen PUPR 943/2024 — komponen biaya bangunan gedung negara', url: 'https://jdih.pu.go.id/internal/assets/assets/produk/KepmenPUPR/2024/05/2024kmpupr943.pdf' },
+      SHS_LINK,
     ],
   },
   {
@@ -136,7 +141,7 @@ export const SOURCES = [
     key: 'biaya-rutin',
     label: 'Biaya rutin: air, listrik bersama, wifi, penjaga, perawatan, PBB',
     usedIn: 'Semua rencana',
-    now: 'Asumsi di laporan (Rp1 jt + Rp0,21 jt/kamar/bulan, perawatan 6%). Inflasi Kota Malang Jan 2026: 3,33%/tahun (BPS) — bisa dipakai untuk “kenaikan biaya rutin”',
+    now: 'Asumsi di laporan (Rp1 jt + Rp0,21 jt/kamar/bulan, perawatan 6%). Batas atas perawatan: Pemkot Malang menganggarkan Rp170 rb (1 lantai) / Rp196 rb (bertingkat) per m² per tahun untuk gedung kantornya (Perwal 14/2025). Inflasi Kota Malang Jan 2026: 3,33%/tahun (BPS) — bisa dipakai untuk “kenaikan biaya rutin”',
     verify: 'Tagihan 3–6 bulan terakhir & gaji penjaga dari penjual; SPPT PBB',
     where: 'Rencana → Biaya rutin & pengaturan lanjutan',
     how: [
@@ -146,6 +151,7 @@ export const SOURCES = [
       'PBB per tahun ada di SPPT PBB.',
     ],
     links: [
+      SHS_LINK,
       { label: 'BPS Kota Malang — inflasi Januari 2026', url: 'https://malangkota.bps.go.id/en/pressrelease/2026/02/02/409/on-january-2026--year-on-year-inflation-malang-municipality-is-3-33-percent.html' },
     ],
   },

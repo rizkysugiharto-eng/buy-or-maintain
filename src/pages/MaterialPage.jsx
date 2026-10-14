@@ -7,6 +7,7 @@ import { MoneyField, NumberField, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
 import { RAB_ITEMS, RAB_PER_M2, RAB_SOURCES } from '../data/rab.js';
+import { SHS_ITEMS, SHS_PER_M2, SHS_SOURCE, SHS_TUKANG_RANGE } from '../data/shs.js';
 import { materialPricesVerified } from '../data/sources.js';
 import { materialCostPerM2 } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatNumber, formatRupiah, formatYears, monthLabel } from '../lib/format.js';
@@ -383,6 +384,90 @@ function RabReference({ materials }) {
   );
 }
 
+// Pembanding resmi: Standar Harga Satuan Pemkot Malang (Perwal 14/2025)
+function ShsReference() {
+  return (
+    <details className="card details-card rab-ref">
+      <summary>Pembanding resmi: harga barang & upah Pemkot Malang ({SHS_SOURCE.short})</summary>
+      <p className="small muted">
+        Standar Harga Satuan adalah batas tertinggi harga yang boleh dipakai Pemkot Malang untuk belanja — biasanya sedikit di atas harga toko.
+        Cocok untuk mengecek apakah harga dari toko atau kontraktor masih wajar.
+      </p>
+      <h3>Bahan saja per m² (belum termasuk upah & adukan)</h3>
+      <div className="table-wrap">
+        <table className="table numbers compact">
+          <thead>
+            <tr>
+              <th>Bahan</th>
+              <th>Per m²</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SHS_PER_M2.map((r) => (
+              <tr key={r.item}>
+                <th scope="row">
+                  {r.item}
+                  <div className="small muted text-cell">{r.how}</div>
+                </th>
+                <td>
+                  {formatRupiah(Math.round(r.value / 50) * 50)}
+                  <div className="small muted">per {r.unit}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="meaning">
+        <b>Artinya:</b> harga terpasang di RAB (bahan + upah) wajar kalau di atas angka bahan ini — mis. hebel terpasang di RAB Rp98,6 rb/m²
+        vs bahan hebelnya saja ±Rp71 rb/m².
+      </p>
+      <h3>Harga barang & upah harian</h3>
+      <div className="table-wrap">
+        <table className="table numbers compact">
+          <thead>
+            <tr>
+              <th>Barang / tenaga</th>
+              <th>Harga</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SHS_ITEMS.map((it) => (
+              <tr key={it.item + it.unit}>
+                <th scope="row">
+                  {it.item}
+                  <div className="small muted">{it.part}</div>
+                </th>
+                <td>
+                  {formatRupiah(it.price)}
+                  <div className="small muted">per {it.unit}</div>
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <th scope="row">
+                Tukang (batu, kayu, cat, besi)
+                <div className="small muted">Upah</div>
+              </th>
+              <td>
+                {formatRupiah(SHS_TUKANG_RANGE.low)} – {formatRupiah(SHS_TUKANG_RANGE.high)}
+                <div className="small muted">per orang/hari</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="small muted">
+        Sumber:{' '}
+        <a href={SHS_SOURCE.url} target="_blank" rel="noreferrer">
+          {SHS_SOURCE.label}
+        </a>{' '}
+        (Lampiran I & IV). Angka dibaca dari salinan dokumen yang dikirim keluarga.
+      </p>
+    </details>
+  );
+}
+
 export default function MaterialPage() {
   const { data, addMaterial } = useData();
   const [params, setParams] = useSearchParams();
@@ -424,6 +509,7 @@ export default function MaterialPage() {
       )}
 
       <RabReference materials={data.materials} />
+      <ShsReference />
 
       <h2 className="section-title">Daftar paket material</h2>
       <p className="muted">Ketuk paket untuk mengubah isi dan harganya. Angka bawaan adalah perkiraan — ganti dengan RAB dari kontraktor.</p>

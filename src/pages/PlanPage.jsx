@@ -7,6 +7,7 @@ import { CostList, MoneyField, NumberField, Segmented, TextField } from '../comp
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
 import { regionRules } from '../data/regions.js';
+import { SHS_MAINTENANCE, SHS_SOURCE } from '../data/shs.js';
 import { materialPricesVerified } from '../data/sources.js';
 import { PLAN_TYPES, SCENARIOS, analyze, materialCostPerM2 } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatNumber, formatPercent, formatYears, monthLabel } from '../lib/format.js';
@@ -26,6 +27,7 @@ function Line({ label, value, strong, minus }) {
 export function ResultDetail({ plan, property, material, settings }) {
   const r = analyze(plan, property, material, settings);
   const { capex: c, income: inc } = r;
+  const area = r.params.buildArea || Number(property?.buildingArea) || 0;
   return (
     <>
       <div className="stats big">
@@ -129,6 +131,13 @@ export function ResultDetail({ plan, property, material, settings }) {
           </li>
         )}
         {r.roomCost != null && <li>Modal per kamar ±{formatCompact(r.roomCost)}.</li>}
+        {area > 0 && inc.maintenance > 0 && (
+          <li>
+            Perawatan ±{formatCompact(inc.maintenance / area)} per m² bangunan per tahun. Sebagai batas atas: Pemkot Malang menganggarkan{' '}
+            {formatCompact(SHS_MAINTENANCE.singleStorey)} (1 lantai) – {formatCompact(SHS_MAINTENANCE.multiStorey)} (bertingkat) per m² per tahun
+            untuk gedung kantornya ({SHS_SOURCE.short}).
+          </li>
+        )}
       </ul>
     </>
   );

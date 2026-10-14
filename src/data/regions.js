@@ -6,6 +6,8 @@
 // Indeks harga bangun = perbandingan HSBGN daerah terhadap Kota Malang (rata-rata kelas sederhana &
 // tidak sederhana, Pergub Jatim No. 34/2022). Paket material bawaan dikalibrasi untuk Kota Malang.
 
+import { SHS_SOURCE } from './shs.js';
+
 const PERGUB_HSBGN = { label: 'Pergub Jatim 34/2022 — HSBGN per kab/kota', url: 'https://dokumjdih.jatimprov.go.id/upload/45172/2022PERGUBJATIM034.pdf' };
 const UU_HKPD_NPOPTKP = { label: 'DDTC — UU HKPD: NPOPTKP minimal Rp80 jt', url: 'https://news.ddtc.co.id/uu-hkpd-revisi-aturan-npoptkp-tanah-dan-atau-bangunan-ini-rinciannya-35545' };
 const KEMENKEU_KOS = { label: 'DDTC — Kemenkeu: kos bisa jadi objek pajak jasa perhotelan', url: 'https://news.ddtc.co.id/berita/nasional/1805491/catat-kemenkeu-sebut-kos-kosan-termasuk-objek-pajak-jasa-perhotelan' };
@@ -22,7 +24,7 @@ export const REGIONS = {
       bphtbPct: 'Perda Kota Malang No. 4/2023 (berlaku 2024)',
       npoptkp: 'Naik dari Rp60 jt jadi Rp80 jt (Bapenda Kota Malang)',
       kosTaxPct: 'Tidak dipungut sejak UU HKPD — Pemkot Malang, Juni 2025. Pemkot berharap bisa memungut lagi.',
-      buildIndex: 'Patokan (= 1,00). HSBGN 2022: Rp6,48 jt (≤2 lantai) / Rp8,62 jt per m² (>2 lantai)',
+      buildIndex: 'Patokan (= 1,00). HSBGN 2022: Rp6,48 jt (≤2 lantai) / Rp8,62 jt per m² (>2 lantai). Harga bahan & upah resmi 2025: Perwal Kota Malang 14/2025 (lihat Banding Material)',
     },
     market: 'Sewa kos AC + KM dalam di Lowokwaru Rp1,3–1,9 jt/bulan (iklan Okt 2026). Tanah Suhat Rp9,5–13,5 jt/m², jalan dalam ±Rp7 jt/m² (iklan 2026).',
     links: [
@@ -33,6 +35,7 @@ export const REGIONS = {
       },
       { label: 'Pemkot Malang — rumah kos tak lagi kena pajak daerah', url: 'https://malangkota.go.id/2025/06/10/uu-hkpd-berlaku-rumah-kos-tak-lagi-kena-pajak-daerah/' },
       PERGUB_HSBGN,
+      { label: SHS_SOURCE.label, url: SHS_SOURCE.url },
     ],
   },
   'kab-malang': {
