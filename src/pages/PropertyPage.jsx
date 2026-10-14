@@ -6,6 +6,7 @@ import { MoneyField, NumberField, RatingBadge, RatingPicker, Segmented, TextFiel
 import Icon from '../components/Icon.jsx';
 import RegionRules from '../components/RegionRules.jsx';
 import SourceItem from '../components/SourceItem.jsx';
+import FenceSection from '../components/FenceSection.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { CHECKLIST } from '../data/example.js';
 import { propertySourceProgress, propertySources } from '../data/sources.js';
@@ -247,6 +248,15 @@ export default function PropertyPage() {
           ))}
         </div>
       </section>
+
+      {owned && (
+        <section className="card" id="pagar">
+          <h2>
+            <span className="step">2b</span> Dijual setelah dipagar tembok
+          </h2>
+          <FenceSection property={property} settings={data.settings} onChange={(patch) => updateProperty(property.id, patch)} />
+        </section>
+      )}
 
       <section className="card">
         <h2>

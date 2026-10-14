@@ -8,6 +8,7 @@
 // menjual lalu menaruh uangnya di SBN/deposito.
 // Semua uang dalam Rupiah per tahun, kecuali disebut lain.
 
+import { FENCE_PACKAGES, squarePerimeter, structurePerMeter, wallPerM2 } from '../data/fence.js';
 import { regionRules } from '../data/regions.js';
 
 export const PLAN_TYPES = {
@@ -78,6 +79,43 @@ export function saleProceeds(property, settings = DEFAULT_SETTINGS) {
   const tax = (value * num(settings.saleTaxPct, 2.5)) / 100;
   const agent = (value * num(settings.saleAgentPct)) / 100;
   return { value, tax, agent, net: value - tax - agent };
+}
+
+/**
+ * Dijual setelah dipagar tembok keliling: biaya pagar per paket material, dan apakah kenaikan harga jual
+ * menutup biayanya. property.fence = { length, height, uplift, extra } (panjang tembok m, tinggi m,
+ * perkiraan kenaikan harga jual Rp, biaya lain mis. gerbang Rp).
+ */
+export function fenceSale(property, settings = DEFAULT_SETTINGS) {
+  const f = property?.fence ?? {};
+  const length = num(f.length, Math.round(squarePerimeter(num(property?.landArea))));
+  const height = num(f.height, 3);
+  const uplift = num(f.uplift);
+  const extra = num(f.extra);
+  const value = num(property?.askingPrice);
+  const keepRate = 1 - (num(settings.saleTaxPct, 2.5) + num(settings.saleAgentPct)) / 100;
+  const plain = value * keepRate;
+  // Harga satuan dari Kota Malang, disesuaikan indeks harga bangun daerah properti (HSBGN)
+  const priceIndex = num(regionRules(property, settings).buildIndex, 1);
+  const structure = structurePerMeter() * priceIndex;
+  const options = FENCE_PACKAGES.map((pkg) => {
+    const wall = wallPerM2(pkg) * priceIndex;
+    const perMeter = structure + height * wall;
+    const cost = length * perMeter + extra;
+    const net = (value + uplift) * keepRate - cost;
+    const breakEven = cost / keepRate; // kenaikan harga jual minimal supaya impas
+    return {
+      pkg,
+      wallPerM2: wall,
+      perMeter,
+      cost,
+      net,
+      vsPlain: net - plain,
+      breakEven,
+      breakEvenPerM2: num(property?.landArea) ? breakEven / num(property.landArea) : null,
+    };
+  });
+  return { length, height, uplift, extra, value, plain, structure, priceIndex, wallArea: length * height, options };
 }
 
 // Biaya bangun per m² dari paket material = jumlah biaya semua komponennya

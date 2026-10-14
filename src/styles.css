@@ -1948,3 +1948,6 @@ a {
 .pdf-mode .table-wrap {
   overflow: visible;
 }
+.good-text {
+  color: var(--good-text);
+}
