@@ -255,7 +255,11 @@ export default function GuidePage() {
         </details>
         <details className="faq">
           <summary>Kenapa link bagikannya panjang?</summary>
-          <p>Karena seluruh angka ikut di dalam link (itulah yang membuatnya tidak perlu server). Panjangnya tidak masalah untuk WhatsApp.</p>
+          <p>
+            Karena seluruh angka ikut di dalam link (itulah yang membuatnya tidak perlu server). Pilih <b>Ringkas</b> di jendela Bagikan supaya
+            ±setengahnya: semua angka & hasil tetap sama persis, hanya catatan teks yang tidak ikut — dan catatan yang sudah ada di HP penerima tidak
+            terhapus. Pilih <b>Lengkap</b> kalau catatannya juga perlu dikirim. Panjangnya tidak masalah untuk WhatsApp.
+          </p>
         </details>
         <details className="faq">
           <summary>Tanah/rumah sudah milik keluarga — dijual atau disewakan?</summary>

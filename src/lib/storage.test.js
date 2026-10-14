@@ -137,3 +137,39 @@ describe('tambah dari file untuk properti yang sudah ada', () => {
     expect(data.plans.filter((pl) => pl.id === current.plans[0].id)).toHaveLength(1);
   });
 });
+
+describe('link ringkas', () => {
+  const withNotes = () => {
+    const d = exampleData();
+    d.properties[0].notes = 'Catatan panjang hasil survei lapangan '.repeat(20);
+    d.properties[0].sources = { 'harga-tanah': { status: 'dicek', note: 'ZNT BPN 2026' } };
+    d.plans[0].regionalPriceAdjust = false;
+    return d;
+  };
+
+  it('hasil hitungan sama persis, catatan tidak ikut, link lebih pendek', async () => {
+    const { encodeShare, decodeShare, withoutNotes } = await import('./storage.js');
+    const data = withNotes();
+    const brief = await encodeShare(withoutNotes(data));
+    const full = await encodeShare(data);
+    expect(brief.length).toBeLessThan(full.length);
+    const opened = await decodeShare(brief);
+    expect(results(opened)).toEqual(results(data));
+    expect(opened.brief).toBe(true);
+    expect(opened.properties[0].notes).toBeUndefined();
+    expect(opened.properties[0].sources['harga-tanah']).toEqual({ status: 'dicek' });
+    expect(opened.plans[0].regionalPriceAdjust).toBe(false);
+  });
+
+  it('membuka link ringkas tidak menghapus catatan yang sudah ada di perangkat', async () => {
+    const { encodeShare, decodeShare, withoutNotes, keepNotes } = await import('./storage.js');
+    const local = withNotes();
+    const sent = withNotes();
+    sent.properties[0].askingPrice = 3_000_000_000; // angka diperbarui pengirim
+    const opened = keepNotes(await decodeShare(await encodeShare(withoutNotes(sent))), local);
+    expect(opened.brief).toBeUndefined();
+    expect(opened.properties[0].askingPrice).toBe(3_000_000_000);
+    expect(opened.properties[0].notes).toBe(local.properties[0].notes);
+    expect(opened.properties[0].sources['harga-tanah']).toEqual({ status: 'dicek', note: 'ZNT BPN 2026' });
+  });
+});

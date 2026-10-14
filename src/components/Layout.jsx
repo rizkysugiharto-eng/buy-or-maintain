@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useData } from '../context/DataContext.jsx';
+import { formatNumber } from '../lib/format.js';
 import { shareUrl } from '../lib/storage.js';
 import Icon from './Icon.jsx';
 
@@ -15,12 +16,14 @@ const NAV = [
 ];
 
 export function ShareDialog({ onClose }) {
-  const { data } = useData();
-  const [url, setUrl] = useState('');
+  const { data, prefs, setPref } = useData();
+  const brief = prefs.shareBrief !== false; // bawaan: link ringkas
+  const [urls, setUrls] = useState({ brief: '', full: '' });
   const [copied, setCopied] = useState(false);
+  const url = brief ? urls.brief : urls.full;
 
   useEffect(() => {
-    shareUrl(data).then(setUrl);
+    Promise.all([shareUrl(data, { brief: true }), shareUrl(data)]).then(([b, f]) => setUrls({ brief: b, full: f }));
   }, [data]);
 
   useEffect(() => {
@@ -53,9 +56,22 @@ export function ShareDialog({ onClose }) {
           </button>
         </div>
         <p>
-          Kirim link ini lewat WhatsApp. Siapa pun yang membukanya akan melihat <b>angka yang sama persis</b> dengan yang ada di layar
-          kamu sekarang — tanpa perlu daftar atau login.
+          Kirim link ini lewat WhatsApp. Siapa pun yang membukanya akan melihat <b>angka yang sama persis</b> dengan yang ada di layar kamu sekarang —
+          tanpa perlu daftar atau login.
         </p>
+        <fieldset className="field">
+          <legend>Isi link</legend>
+          <div className="segmented">
+            <button type="button" className={`seg${brief ? ' active' : ''}`} aria-pressed={brief} onClick={() => setPref('shareBrief', true)}>
+              <strong>Ringkas</strong>
+              <small>Semua angka & hasil, tanpa catatan · {formatNumber(urls.brief.length)} karakter</small>
+            </button>
+            <button type="button" className={`seg${!brief ? ' active' : ''}`} aria-pressed={!brief} onClick={() => setPref('shareBrief', false)}>
+              <strong>Lengkap</strong>
+              <small>Termasuk catatan & bukti sumber · {formatNumber(urls.full.length)} karakter</small>
+            </button>
+          </div>
+        </fieldset>
         <details className="share-raw">
           <summary>Lihat link</summary>
           <textarea id="share-url" className="share-url" readOnly value={url} rows={4} onFocus={(e) => e.target.select()} />
@@ -70,8 +86,8 @@ export function ShareDialog({ onClose }) {
           </button>
         </div>
         <p className="muted small">
-          🔒 Datanya ada di dalam link itu sendiri, tidak disimpan di server mana pun. Jadi cukup bagikan ke orang yang memang boleh
-          melihat. Kalau ada angka yang diubah, kirim link baru.
+          🔒 Datanya ada di dalam link itu sendiri, tidak disimpan di server mana pun. Jadi cukup bagikan ke orang yang memang boleh melihat. Kalau
+          ada angka yang diubah, kirim link baru.
         </p>
       </div>
     </div>
@@ -147,8 +163,8 @@ export default function Layout({ children }) {
       </main>
 
       <footer className="footer">
-        Semua angka adalah perkiraan, bukan jaminan hasil dan bukan nasihat keuangan profesional. Keputusan akhir tetap perlu cek
-        lapangan oleh tukang/insinyur dan cek surat-surat oleh notaris/PPAT.
+        Semua angka adalah perkiraan, bukan jaminan hasil dan bukan nasihat keuangan profesional. Keputusan akhir tetap perlu cek lapangan oleh
+        tukang/insinyur dan cek surat-surat oleh notaris/PPAT.
         <span className="version">Versi {typeof __APP_VERSION__ === 'undefined' ? 'pengembangan' : __APP_VERSION__}</span>
       </footer>
 

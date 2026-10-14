@@ -96,7 +96,7 @@ function strip(value) {
   if (value && typeof value === 'object') {
     const out = {};
     for (const [key, v] of Object.entries(value)) {
-      if (v == null || v === '' || v === false) continue;
+      if (v == null || v === '') continue;
       const stripped = strip(v);
       if (stripped && typeof stripped === 'object' && !Array.isArray(stripped) && !Object.keys(stripped).length) continue;
       out[key] = stripped;
@@ -107,6 +107,53 @@ function strip(value) {
 }
 
 const same = (a, b) => JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+
+// Link ringkas: catatan teks (kondisi, kesimpulan, catatan lapangan, bukti sumber angka) tidak ikut.
+// Semua angka tetap ikut, jadi hasil hitungannya sama persis.
+const NOTE_FIELDS = ['description', 'notes', 'verdictNote', 'locationNote', 'riskNote'];
+
+const dropSourceNotes = (sources) => Object.fromEntries(Object.entries(sources ?? {}).map(([key, { note, ...rest }]) => [key, rest]));
+
+export function withoutNotes(data) {
+  return {
+    ...data,
+    brief: true,
+    sources: dropSourceNotes(data.sources),
+    properties: data.properties.map((p) => {
+      const out = { ...p, sources: dropSourceNotes(p.sources) };
+      for (const f of NOTE_FIELDS) delete out[f];
+      return out;
+    }),
+  };
+}
+
+/** Saat membuka link ringkas: catatan yang sudah ada di perangkat ini untuk properti yang sama tetap dipakai. */
+export function keepNotes(incoming, current) {
+  const byId = new Map((current?.properties ?? []).map((p) => [p.id, p]));
+  const notesOf = (sources) =>
+    Object.fromEntries(
+      Object.entries(sources ?? {})
+        .filter(([, v]) => v?.note)
+        .map(([k, v]) => [k, v.note]),
+    );
+  const withNotes = (sources, notes) => {
+    const out = { ...sources };
+    for (const [k, note] of Object.entries(notes)) out[k] = { ...out[k], note: out[k]?.note || note };
+    return out;
+  };
+  const { brief, ...data } = incoming;
+  return {
+    ...data,
+    sources: withNotes(data.sources, notesOf(current?.sources)),
+    properties: data.properties.map((p) => {
+      const old = byId.get(p.id);
+      if (!old) return p;
+      const out = { ...p, sources: withNotes(p.sources, notesOf(old.sources)) };
+      for (const f of NOTE_FIELDS) if (!out[f] && old[f]) out[f] = old[f];
+      return out;
+    }),
+  };
+}
 
 export function compactData(data) {
   const settings = {};
@@ -124,6 +171,7 @@ export function compactData(data) {
     }),
     s: settings,
     k: data.sources,
+    r: data.brief ? 1 : null,
   });
 }
 
@@ -137,6 +185,7 @@ export function expandData(compact) {
     materials: (compact.m ?? []).map((m) => (typeof m === 'string' ? structuredClone(EXAMPLE_MATERIALS.find((x) => x.id === m)) : m)).filter(Boolean),
     settings: { ...structuredClone(DEFAULT_SETTINGS), ...compact.s },
     sources: compact.k ?? {},
+    ...(compact.r && { brief: true }),
   };
 }
 
@@ -152,9 +201,9 @@ export async function decodeShare(text) {
   return normalizeData(data);
 }
 
-export async function shareUrl(data) {
+export async function shareUrl(data, { brief = false } = {}) {
   const base = `${window.location.origin}${window.location.pathname}`;
-  return `${base}#/?data=${await encodeShare(data)}`;
+  return `${base}#/?data=${await encodeShare(brief ? withoutNotes(data) : data)}`;
 }
 
 // ===== File .json =====

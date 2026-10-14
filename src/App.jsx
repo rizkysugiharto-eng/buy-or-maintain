@@ -5,7 +5,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } fr
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Layout from './components/Layout.jsx';
 import { useData } from './context/DataContext.jsx';
-import { decodeShare } from './lib/storage.js';
+import { decodeShare, keepNotes } from './lib/storage.js';
 import GuidePage from './pages/GuidePage.jsx';
 import Home from './pages/Home.jsx';
 import MaterialPage from './pages/MaterialPage.jsx';
@@ -18,7 +18,7 @@ import SettingsPage from './pages/SettingsPage.jsx';
 function SharedLinkLoader() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { replaceData, setNotice } = useData();
+  const { data: current, replaceData, setNotice } = useData();
   const encoded = params.get('data');
   const handled = useRef(null); // cegah dibuka dua kali (data lama jangan tertimpa sebagai cadangan)
 
@@ -26,7 +26,14 @@ function SharedLinkLoader() {
     if (!encoded || handled.current === encoded) return;
     handled.current = encoded;
     decodeShare(encoded)
-      .then((data) => replaceData(data, 'Data dari link bagikan sudah dibuka dan tersimpan di perangkat ini.'))
+      .then((data) =>
+        data.brief
+          ? replaceData(
+              keepNotes(data, current),
+              'Data dari link ringkas sudah dibuka. Catatan tidak ikut di link ini; catatan yang sudah ada di perangkat ini tetap disimpan.',
+            )
+          : replaceData(data, 'Data dari link bagikan sudah dibuka dan tersimpan di perangkat ini.'),
+      )
       .catch(() => setNotice({ message: 'Link tidak bisa dibuka — mungkin terpotong saat disalin. Minta kirim ulang link-nya.' }))
       .finally(() => navigate('/', { replace: true }));
   }, [encoded, navigate, replaceData, setNotice]);
