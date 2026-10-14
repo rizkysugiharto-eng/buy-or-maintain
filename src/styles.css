@@ -1936,3 +1936,15 @@ a {
   align-items: center;
   gap: 8px;
 }
+
+/* Tata letak saat Ringkasan difoto untuk "Unduh PDF" (hanya di salinan halaman, tidak terlihat) */
+.pdf-mode body {
+  background: #ffffff;
+}
+.pdf-mode .no-print,
+.pdf-mode .card-link {
+  display: none !important;
+}
+.pdf-mode .table-wrap {
+  overflow: visible;
+}

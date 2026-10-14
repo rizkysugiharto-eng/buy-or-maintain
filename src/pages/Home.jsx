@@ -1,7 +1,7 @@
 // Ringkasan untuk keluarga: kesimpulan per properti, rapor Baik/Cukup/Kurang,
 // grafik perbandingan dengan penjelasan "Artinya", dan tabel lengkap.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { CashflowChart, HBarChart, Legend } from '../components/Charts.jsx';
@@ -9,6 +9,7 @@ import { RatingBadge } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { primaryRow, useData } from '../context/DataContext.jsx';
 import { planTypesFor, reportCard, saleProceeds } from '../lib/calc.js';
+import { downloadPdf } from '../lib/pdf.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 import { rowLabel, shortName } from '../lib/labels.js';
 import { propertySourceProgress, sourceProgress } from '../data/sources.js';
@@ -49,6 +50,8 @@ export default function Home() {
   const { settings } = data;
   const properties = data.properties;
   const [printing, setPrinting] = useState(false);
+  const [pdfState, setPdfState] = useState(null); // null | 'membuat' | pesan galat
+  const pageRef = useRef(null);
   const showDetail = !!prefs.homeDetail || printing;
 
   // Saat dicetak (tombol Cetak maupun Ctrl+P), detail lengkap selalu ikut
@@ -62,6 +65,31 @@ export default function Home() {
       window.removeEventListener('afterprint', after);
     };
   }, []);
+
+  // Unduh PDF: buka detail lengkap dulu (seperti saat dicetak), beri waktu grafik tergambar, lalu foto halaman
+  async function savePdf() {
+    setPdfState('membuat');
+    flushSync(() => setPrinting(true));
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      const today = new Date();
+      const stamp = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const name = (data.title || 'Ringkasan')
+        .replace(/[^\p{L}\p{N} -]/gu, '')
+        .trim()
+        .replace(/\s+/g, '-');
+      await downloadPdf(
+        pageRef.current,
+        `${name}-${today.toISOString().slice(0, 10)}.pdf`,
+        `Beli atau Rawat? · ${data.title || 'Ringkasan'} · dibuat ${stamp}`,
+      );
+      setPdfState(null);
+    } catch (err) {
+      setPdfState(`PDF gagal dibuat (${err?.message || err}). Coba tombol Cetak lalu pilih “Simpan sebagai PDF”.`);
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   function printAll() {
     setPrinting(true);
@@ -122,7 +150,7 @@ export default function Home() {
     : null;
 
   return (
-    <div className="page">
+    <div className="page" ref={pageRef}>
       <div className="page-head">
         <div>
           <h1>{data.title || 'Mana yang paling layak?'}</h1>
@@ -130,10 +158,21 @@ export default function Home() {
             Perbandingan {properties.length} properti · {rows.length} pilihan rencana · hitungan mulai {monthLabel(settings.startMonth, 0)}
           </p>
         </div>
-        <button type="button" className="btn no-print" onClick={printAll}>
-          <Icon name="print" /> Cetak / PDF
-        </button>
+        <div className="btn-row no-print">
+          <button type="button" className="btn primary" onClick={savePdf} disabled={pdfState === 'membuat'}>
+            <Icon name="download" /> {pdfState === 'membuat' ? 'Membuat PDF…' : 'Unduh PDF'}
+          </button>
+          <button type="button" className="btn" onClick={printAll}>
+            <Icon name="print" /> Cetak
+          </button>
+        </div>
       </div>
+
+      {pdfState && pdfState !== 'membuat' && (
+        <p className="field-error no-print" role="alert">
+          {pdfState}
+        </p>
+      )}
 
       <p className="guide-hint no-print">
         Baru pertama kali? Baca <Link to="/cara-pakai">Cara Pakai</Link> — alur pengisian dan cara membaca angkanya.
