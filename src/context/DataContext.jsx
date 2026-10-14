@@ -4,7 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { emptyData, exampleData } from '../data/example.js';
 import { analyze, planVariants } from '../lib/calc.js';
-import { loadBackup, loadLocal, loadPrefs, saveBackup, saveLocal, savePrefs } from '../lib/storage.js';
+import { loadBackup, loadLocal, loadPrefs, mergeData, saveBackup, saveLocal, savePrefs } from '../lib/storage.js';
 
 const DataContext = createContext(null);
 
@@ -168,6 +168,18 @@ export function DataProvider({ children }) {
           return next;
         });
         if (message) setNotice({ message, canUndo: true });
+      },
+      // Tambahkan properti dari file lain tanpa menghapus yang sudah ada
+      mergeIn: (incoming, fileName) => {
+        setData((current) => {
+          const { data: next, added } = mergeData(current, incoming);
+          saveBackup(current);
+          setNotice({
+            message: added ? `${added} properti dari "${fileName}" sudah ditambahkan.` : `Semua properti di "${fileName}" sudah ada — tidak ada yang ditambahkan.`,
+            canUndo: added > 0,
+          });
+          return next;
+        });
       },
       undoReplace: () => {
         const backup = loadBackup();

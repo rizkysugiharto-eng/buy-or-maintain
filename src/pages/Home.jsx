@@ -165,7 +165,7 @@ export default function Home() {
               <div>
                 <h3>{property.name}</h3>
                 <p className="muted small">
-                  {regionRules(property, settings).name} · {formatCompact(property.askingPrice, 1)}
+                  {regionRules(property, settings).name} · {property.askingPrice ? formatCompact(property.askingPrice, 1) : 'harga belum diisi'}
                   {row ? ` · ${PLAN_TYPES[row.plan.type].label.toLowerCase()}: ${rowLabel(row, { withProperty: false })}` : ''}
                 </p>
               </div>
@@ -191,6 +191,42 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      <section className="card">
+        <h2>Rapor singkat</h2>
+        <p className="muted">Setiap properti dinilai Baik, Cukup, atau Kurang memakai rencana utamanya.</p>
+        <div className="table-wrap">
+          <table className="table rapor">
+            <thead>
+              <tr>
+                <th>Aspek</th>
+                {cards.map(({ property }) => (
+                  <th key={property.id}>{shortName(property)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cards[0].card.rows.map((aspect, idx) => (
+                <tr key={aspect.key}>
+                  <th scope="row">{aspect.label}</th>
+                  {cards.map(({ property, card }) => (
+                    <td key={property.id}>
+                      <RatingBadge rating={card.rows[idx].rating} />
+                      {card.rows[idx].note && <div className="small muted">{card.rows[idx].note}</div>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="verdict-row">
+                <th scope="row">Kesimpulan</th>
+                {cards.map(({ property, card }) => (
+                  <td key={property.id}>{card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : '–'}</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {primaryRows.length > 0 && (
         <div className="chart-grid">
@@ -233,49 +269,13 @@ export default function Home() {
 
       <div className="detail-toggle no-print">
         <button type="button" className="btn" aria-expanded={showDetail} onClick={() => setPref('homeDetail', !prefs.homeDetail)}>
-          {showDetail ? 'Sembunyikan detail' : 'Lihat detail lengkap: rapor, semua pilihan & grafik'}
+          {showDetail ? 'Sembunyikan detail' : 'Lihat detail lengkap: semua pilihan & grafik'}
           <Icon name="chevron" size={14} />
         </button>
       </div>
 
       {showDetail && (
         <>
-          <section className="card">
-            <h2>Rapor singkat</h2>
-            <p className="muted">Setiap properti dinilai Baik, Cukup, atau Kurang memakai rencana utamanya.</p>
-            <div className="table-wrap">
-              <table className="table rapor">
-                <thead>
-                  <tr>
-                    <th>Aspek</th>
-                    {cards.map(({ property }) => (
-                      <th key={property.id}>{shortName(property)}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {cards[0].card.rows.map((aspect, idx) => (
-                    <tr key={aspect.key}>
-                      <th scope="row">{aspect.label}</th>
-                      {cards.map(({ property, card }) => (
-                        <td key={property.id}>
-                          <RatingBadge rating={card.rows[idx].rating} />
-                          {card.rows[idx].note && <div className="small muted">{card.rows[idx].note}</div>}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  <tr className="verdict-row">
-                    <th scope="row">Kesimpulan</th>
-                    {cards.map(({ property, card }) => (
-                      <td key={property.id}>{card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : '–'}</td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
           {rows.length > 0 && (
             <>
               <h2 className="section-title">Perbandingan dalam gambar</h2>

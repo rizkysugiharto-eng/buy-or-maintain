@@ -39,7 +39,7 @@ export default function Properties() {
                   {regionRules(property, data.settings).name} · {property.address || 'Alamat belum diisi'}
                 </p>
                 <p className="small">
-                  {formatCompact(property.askingPrice, 1)}
+                  {property.askingPrice ? formatCompact(property.askingPrice, 1) : 'Harga belum diisi'}
                   {property.landArea ? ` · tanah ${formatNumber(property.landArea)} m²` : ''}
                   {` · ${planCount} rencana`}
                   {row ? ` · modal kembali ${formatYears(row.result.paybackYears, data.settings.maxYears)}` : ''}

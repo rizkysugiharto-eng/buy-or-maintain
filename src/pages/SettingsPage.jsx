@@ -157,10 +157,15 @@ function SourcesSection() {
 }
 
 export default function SettingsPage() {
-  const { data, analysis, updateSettings, setTitle, replaceData, clearAll } = useData();
+  const { data, analysis, updateSettings, setTitle, replaceData, mergeIn, clearAll } = useData();
   const [sharing, setSharing] = useState(false);
   const [fileError, setFileError] = useState(null);
   const fileInput = useRef(null);
+  const fileMode = useRef('ganti');
+  const pickFile = (mode) => {
+    fileMode.current = mode;
+    fileInput.current?.click();
+  };
   const s = data.settings;
   const set = (key) => (value) => updateSettings({ [key]: value ?? DEFAULT_SETTINGS[key] });
   const stamp = new Date().toISOString().slice(0, 10);
@@ -176,10 +181,13 @@ export default function SettingsPage() {
 
   async function openFile(e) {
     const file = e.target.files?.[0];
+    const merge = fileMode.current === 'tambah';
     e.target.value = '';
     if (!file) return;
     try {
-      replaceData(await readJsonFile(file), `File "${file.name}" sudah dibuka.`);
+      const incoming = await readJsonFile(file);
+      if (merge) mergeIn(incoming, file.name);
+      else replaceData(incoming, `File "${file.name}" sudah dibuka.`);
       setFileError(null);
     } catch (err) {
       setFileError(err.message || 'File tidak bisa dibuka');
@@ -234,10 +242,15 @@ export default function SettingsPage() {
             <strong>Simpan ke file</strong>
             <span>Cadangan data (.json)</span>
           </button>
-          <button type="button" className="action" onClick={() => fileInput.current?.click()}>
+          <button type="button" className="action" onClick={() => pickFile('ganti')}>
             <Icon name="upload" size={22} />
             <strong>Buka file</strong>
-            <span>Dari file .json yang pernah disimpan</span>
+            <span>Ganti semua data dengan isi file .json</span>
+          </button>
+          <button type="button" className="action" onClick={() => pickFile('tambah')}>
+            <Icon name="plus" size={22} />
+            <strong>Tambah dari file</strong>
+            <span>Masukkan properti baru dari file, data sekarang tetap</span>
           </button>
           <button type="button" className="action" onClick={exportCsv}>
             <Icon name="download" size={22} />

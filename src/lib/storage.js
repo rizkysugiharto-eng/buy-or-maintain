@@ -19,11 +19,11 @@ export function isValidData(data) {
   );
 }
 
-// Lengkapi pengaturan yang belum ada (mis. data dari versi lama)
 // Judul lama yang hanya menyebut kos Malang diganti judul umum (properti bisa di daerah lain)
 const OLD_TITLES = /^pilihan kos malang/i;
 export const GENERAL_TITLE = 'Rencana properti keluarga';
 
+// Lengkapi pengaturan yang belum ada (mis. data dari versi lama)
 export function normalizeData(data) {
   return {
     ...data,
@@ -170,6 +170,46 @@ export function downloadFile(filename, content, type = 'application/json') {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Tambahkan properti (beserta rencana & paket material yang dipakainya) dari data lain
+ * tanpa mengubah data yang sudah ada. Properti yang sama persis (id & nama sama) dilewati;
+ * id yang bentrok diganti supaya tidak menimpa.
+ */
+export function mergeData(current, incoming) {
+  const fresh = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const propIds = new Map(current.properties.map((p) => [p.id, p]));
+  const planIds = new Set(current.plans.map((p) => p.id));
+  const matIds = new Set(current.materials.map((m) => m.id));
+  const properties = [];
+  const plans = [];
+  for (const property of incoming.properties) {
+    const existing = propIds.get(property.id);
+    if (existing && existing.name === property.name) continue;
+    const id = existing ? fresh('prop') : property.id;
+    const idMap = new Map();
+    const own = incoming.plans
+      .filter((pl) => pl.propertyId === property.id)
+      .map((pl) => {
+        const planId = planIds.has(pl.id) ? fresh('plan') : pl.id;
+        idMap.set(pl.id, planId);
+        return { ...pl, id: planId, propertyId: id };
+      });
+    const primaryPlanId = idMap.get(property.primaryPlanId) ?? property.primaryPlanId;
+    properties.push({ ...property, id, primaryPlanId });
+    plans.push(...own);
+  }
+  const materials = incoming.materials.filter((m) => !matIds.has(m.id) && plans.some((pl) => pl.materialIds?.includes(m.id)));
+  return {
+    data: {
+      ...current,
+      properties: [...current.properties, ...properties],
+      plans: [...current.plans, ...plans],
+      materials: [...current.materials, ...materials],
+    },
+    added: properties.length,
+  };
 }
 
 export async function readJsonFile(file) {

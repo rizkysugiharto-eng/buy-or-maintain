@@ -53,12 +53,16 @@ export default function GuidePage() {
       <Step number={1} title="Pertama kali buka" to="/pengaturan" linkLabel="Buka Data & Asumsi">
         <ul>
           <li>
-            Kalau punya file data (mis. <code>Data-Kos-Malang-Oktober-2026.json</code>): buka <b>Data & Asumsi → Buka file</b>.
+            Kalau punya file data (mis. <code>Data-Properti-Keluarga-Oktober-2026.json</code>): buka <b>Data & Asumsi → Buka file</b>.
           </li>
           <li>Kalau dapat link dari keluarga: cukup buka link-nya, data langsung masuk.</li>
+          <li>
+            Dapat file berisi properti baru (mis. kiriman keluarga)? Pakai <b>Data & Asumsi → Tambah dari file</b> — properti di file itu
+            ditambahkan, data yang sudah ada tidak berubah.
+          </li>
           <li>Setelah itu data tersimpan otomatis di HP/laptop ini — besok tidak perlu buka file lagi.</li>
           <li>
-            <b>Ringkasan</b> tampil ringkas dulu (kesimpulan, kartu, 2 grafik). Tekan <b>Lihat detail lengkap</b> untuk rapor, semua pilihan,
+            <b>Ringkasan</b> tampil ringkas dulu (kesimpulan, kartu, rapor, 2 grafik). Tekan <b>Lihat detail lengkap</b> untuk semua pilihan
             dan grafik lainnya. Saat dicetak, detail lengkap selalu ikut.
           </li>
         </ul>

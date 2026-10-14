@@ -58,3 +58,35 @@ describe('judul umum', () => {
     expect(normalizeData({ title: 'Kos Blitar', settings: {} }).title).toBe('Kos Blitar');
   });
 });
+
+describe('tambah dari file', () => {
+  it('menambah properti baru beserta rencananya tanpa mengubah data lama', async () => {
+    const { mergeData } = await import('./storage.js');
+    const current = exampleData();
+    const incoming = {
+      ...exampleData(),
+      properties: [{ id: 'p-baru', name: 'Tanah baru', primaryPlanId: 'plan-x' }, current.properties[0]],
+      plans: [{ ...current.plans[0], id: 'plan-x', propertyId: 'p-baru' }],
+    };
+    const { data, added } = mergeData(current, incoming);
+    expect(added).toBe(1);
+    expect(data.properties).toHaveLength(current.properties.length + 1);
+    expect(data.properties.slice(0, current.properties.length)).toEqual(current.properties);
+    expect(data.plans.at(-1)).toMatchObject({ id: 'plan-x', propertyId: 'p-baru' });
+  });
+
+  it('id yang bentrok dengan properti lain diganti, rencana utama ikut', async () => {
+    const { mergeData } = await import('./storage.js');
+    const current = exampleData();
+    const clash = { ...current.properties[0], name: 'Beda nama', primaryPlanId: current.plans[0].id };
+    const incoming = { ...current, properties: [clash], plans: [{ ...current.plans[0] }] };
+    const { data, added } = mergeData(current, incoming);
+    expect(added).toBe(1);
+    const added1 = data.properties.at(-1);
+    expect(added1.id).not.toBe(clash.id);
+    const plan = data.plans.at(-1);
+    expect(plan.propertyId).toBe(added1.id);
+    expect(plan.id).not.toBe(current.plans[0].id);
+    expect(added1.primaryPlanId).toBe(plan.id);
+  });
+});
