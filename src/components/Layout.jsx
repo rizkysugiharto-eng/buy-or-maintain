@@ -11,6 +11,7 @@ const NAV = [
   { to: '/properti', label: 'Properti', icon: 'building' },
   { to: '/material', label: 'Banding Material', icon: 'layers' },
   { to: '/pengaturan', label: 'Data & Asumsi', icon: 'settings' },
+  { to: '/cara-pakai', label: 'Cara Pakai', icon: 'info' },
 ];
 
 export function ShareDialog({ onClose }) {
@@ -32,7 +33,9 @@ export function ShareDialog({ onClose }) {
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      document.getElementById('share-url')?.select();
+      const box = document.getElementById('share-url');
+      box?.closest('details')?.setAttribute('open', '');
+      box?.select();
       document.execCommand?.('copy');
     }
     setCopied(true);
@@ -53,7 +56,10 @@ export function ShareDialog({ onClose }) {
           Kirim link ini lewat WhatsApp. Siapa pun yang membukanya akan melihat <b>angka yang sama persis</b> dengan yang ada di layar
           kamu sekarang — tanpa perlu daftar atau login.
         </p>
-        <textarea id="share-url" className="share-url" readOnly value={url} rows={3} onFocus={(e) => e.target.select()} />
+        <details className="share-raw">
+          <summary>Lihat link</summary>
+          <textarea id="share-url" className="share-url" readOnly value={url} rows={4} onFocus={(e) => e.target.select()} />
+        </details>
         <div className="btn-row">
           <a className="btn primary" href={`https://wa.me/?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener noreferrer">
             Kirim lewat WhatsApp
@@ -77,7 +83,11 @@ export default function Layout({ children }) {
   const [sharing, setSharing] = useState(false);
   const location = useLocation();
 
-  useEffect(() => window.scrollTo(0, 0), [location.pathname]);
+  // Kurung kurawal penting: di Chrome terbaru scrollTo mengembalikan Promise, dan React
+  // akan mencoba "membersihkan" efek dengan memanggil nilai itu saat pindah halaman.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="app">

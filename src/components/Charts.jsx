@@ -25,7 +25,9 @@ function readColors() {
 export function useChartColors() {
   const { prefs } = useData();
   const [colors, setColors] = useState(readColors);
-  useEffect(() => setColors(readColors()), [prefs.theme]);
+  useEffect(() => {
+    setColors(readColors());
+  }, [prefs.theme]);
   return colors;
 }
 

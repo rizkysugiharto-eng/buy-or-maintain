@@ -91,6 +91,10 @@ export default function Home() {
         </button>
       </div>
 
+      <p className="guide-hint no-print">
+        Baru pertama kali? Baca <Link to="/cara-pakai">Cara Pakai</Link> — alur pengisian dan cara membaca angkanya.
+      </p>
+
       <section className="card intinya">
         <h2>Intinya</h2>
         <ul>

@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Layout from './components/Layout.jsx';
 import { useData } from './context/DataContext.jsx';
 import { decodeShare } from './lib/storage.js';
+import GuidePage from './pages/GuidePage.jsx';
 import Home from './pages/Home.jsx';
 import MaterialPage from './pages/MaterialPage.jsx';
 import PlanPage from './pages/PlanPage.jsx';
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/rencana/:id" element={<PlanPage />} />
           <Route path="/material" element={<MaterialPage />} />
           <Route path="/pengaturan" element={<SettingsPage />} />
+          <Route path="/cara-pakai" element={<GuidePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>

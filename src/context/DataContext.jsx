@@ -53,7 +53,9 @@ export function DataProvider({ children }) {
   const [prefs, setPrefs] = useState(() => ({ theme: 'light', ...loadPrefs() }));
   const [notice, setNotice] = useState(null); // pesan di atas halaman (mis. setelah buka link)
 
-  useEffect(() => saveLocal(data), [data]);
+  useEffect(() => {
+    saveLocal(data);
+  }, [data]);
   useEffect(() => {
     savePrefs(prefs);
     document.documentElement.dataset.theme = prefs.theme;

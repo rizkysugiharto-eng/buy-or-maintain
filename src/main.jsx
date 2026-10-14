@@ -7,10 +7,6 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { DataProvider } from './context/DataContext.jsx';
 import './styles.css';
-import { installDomGuard } from './lib/domGuard.js';
-
-// Harus dipasang sebelum React mulai menggambar halaman
-installDomGuard();
 
 // HashRouter (alamat seperti /#/properti) dipakai agar aman di GitHub Pages,
 // dan supaya data di link bagikan (#/?data=...) tidak pernah terkirim ke server.

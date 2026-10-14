@@ -1,17 +1,49 @@
-// Link bagikan harus bisa dibuka kembali utuh, dan cukup pendek untuk dikirim lewat WhatsApp.
+// Link bagikan harus bisa dibuka kembali dengan hasil hitung yang sama persis,
+// dan cukup pendek untuk dikirim lewat WhatsApp.
 
 import { describe, expect, it } from 'vitest';
 import { exampleData } from '../data/example.js';
+import { analyze, planVariants } from './calc.js';
 import { decodeShare, encodeShare } from './storage.js';
 
+// Ringkasan semua hasil hitung, untuk membandingkan sebelum & sesudah dibagikan
+function results(data) {
+  return data.plans.flatMap((plan) => {
+    const property = data.properties.find((p) => p.id === plan.propertyId);
+    return planVariants(plan, data.materials).map((v) => {
+      const r = analyze(plan, property, v.material, data.settings);
+      return [v.key, Math.round(r.capex.total), Math.round(r.income.noi), r.paybackMonth && Math.round(r.paybackMonth)];
+    });
+  });
+}
+
 describe('link bagikan', () => {
-  it('data kembali utuh setelah dikodekan & dibuka', async () => {
+  it('hasil hitung sama persis setelah dibuka dari link', async () => {
     const data = exampleData();
-    expect(await decodeShare(await encodeShare(data))).toEqual(data);
+    const opened = await decodeShare(await encodeShare(data));
+    expect(results(opened)).toEqual(results(data));
+    expect(opened.properties.map((p) => p.name)).toEqual(data.properties.map((p) => p.name));
+    expect(opened.settings).toEqual(data.settings);
   });
-  it('panjang link data contoh < 8.000 karakter', async () => {
-    expect((await encodeShare(exampleData())).length).toBeLessThan(8000);
+
+  it('paket material & asumsi yang diubah ikut terbawa', async () => {
+    const data = exampleData();
+    data.materials[1].components[1].costPerM2 = 750_000;
+    data.materials.push({ ...structuredClone(data.materials[0]), id: 'mat-baru', name: 'Hebel A' });
+    data.plans[1].materialIds.push('mat-baru');
+    data.settings.budget = 5_000_000_000;
+    data.properties[0].checklist = { shm: true };
+    const opened = await decodeShare(await encodeShare(data));
+    expect(results(opened)).toEqual(results(data));
+    expect(opened.materials.map((m) => m.name)).toContain('Hebel A');
+    expect(opened.settings.budget).toBe(5_000_000_000);
+    expect(opened.properties[0].checklist).toEqual({ shm: true });
   });
+
+  it('link data contoh pendek (< 1.600 karakter)', async () => {
+    expect((await encodeShare(exampleData())).length).toBeLessThan(1600);
+  });
+
   it('link rusak ditolak', async () => {
     await expect(decodeShare('bukan-data')).rejects.toThrow();
   });

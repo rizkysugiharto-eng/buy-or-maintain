@@ -17,6 +17,8 @@ Website: **https://rizkysugiharto-eng.github.io/buy-or-maintain/**
    Isi dan harga tiap paket (dinding, atap, lantai, dst.) bisa diubah.
 4. **Bagikan** — tombol biru di kanan atas membuat link berisi seluruh data. Kirim lewat
    WhatsApp; yang membuka akan melihat angka yang sama persis.
+5. **Cara Pakai** — panduan lengkap di dalam website: alur pengisian, contoh banding
+   material, dan cara membaca setiap angka.
 
 Uang boleh ditulis bebas: `3,2 M`, `450 jt`, `1,7jt`, `450rb`, atau `3.200.000.000`.
 
@@ -24,7 +26,8 @@ Uang boleh ditulis bebas: `3,2 M`, `450 jt`, `1,7jt`, `450rb`, atau `3.200.000.0
 
 - Tidak ada server atau database. Data tersimpan di browser perangkat masing-masing
   (localStorage).
-- Link bagikan menyimpan data di bagian `#` alamat, yang **tidak pernah dikirim ke server**
+- Link bagikan menyimpan data di bagian `#` alamat (dalam bentuk ringkas: isian kosong,
+  paket material bawaan, dan asumsi bawaan tidak ikut, jadi link ±45% lebih pendek), yang **tidak pernah dikirim ke server**
   (termasuk GitHub Pages). Siapa pun yang memegang link bisa melihat isinya, jadi bagikan
   hanya ke orang yang berhak.
 - Repo ini hanya berisi kode dan data contoh tanpa nama/alamat asli. Data keluarga disimpan

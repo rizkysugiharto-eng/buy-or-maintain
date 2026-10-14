@@ -4,7 +4,7 @@
 // atau lewat file .json.
 
 import { DEFAULT_SETTINGS } from './calc.js';
-import { DATA_VERSION } from '../data/example.js';
+import { DATA_VERSION, EXAMPLE_MATERIALS } from '../data/example.js';
 
 const STORAGE_KEY = 'buy-or-maintain:data';
 const BACKUP_KEY = 'buy-or-maintain:backup';
@@ -82,14 +82,67 @@ async function pipe(bytes, stream) {
   return new Uint8Array(await out.arrayBuffer());
 }
 
+// Bentuk ringkas untuk link supaya lebih pendek: isian kosong dibuang, paket material
+// yang masih sama dengan bawaan cukup ditulis id-nya, dan asumsi bawaan tidak ikut.
+const COMPACT = 2;
+
+function strip(value) {
+  if (Array.isArray(value)) return value.map(strip);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [key, v] of Object.entries(value)) {
+      if (v == null || v === '' || v === false) continue;
+      const stripped = strip(v);
+      if (stripped && typeof stripped === 'object' && !Array.isArray(stripped) && !Object.keys(stripped).length) continue;
+      out[key] = stripped;
+    }
+    return out;
+  }
+  return value;
+}
+
+const same = (a, b) => JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+
+export function compactData(data) {
+  const settings = {};
+  for (const [key, value] of Object.entries(data.settings ?? {})) {
+    if (!same(value, DEFAULT_SETTINGS[key])) settings[key] = value;
+  }
+  return strip({
+    c: COMPACT,
+    t: data.title,
+    p: data.properties,
+    l: data.plans,
+    m: data.materials.map((m) => {
+      const builtIn = EXAMPLE_MATERIALS.find((x) => x.id === m.id);
+      return builtIn && same(m, builtIn) ? m.id : m;
+    }),
+    s: settings,
+  });
+}
+
+export function expandData(compact) {
+  if (compact?.c !== COMPACT) return compact; // link versi lama: data utuh
+  return {
+    version: DATA_VERSION,
+    title: compact.t ?? '',
+    properties: compact.p ?? [],
+    plans: (compact.l ?? []).map((plan) => ({ extraCosts: [], ...plan })),
+    materials: (compact.m ?? [])
+      .map((m) => (typeof m === 'string' ? structuredClone(EXAMPLE_MATERIALS.find((x) => x.id === m)) : m))
+      .filter(Boolean),
+    settings: { ...structuredClone(DEFAULT_SETTINGS), ...compact.s },
+  };
+}
+
 export async function encodeShare(data) {
-  const json = new TextEncoder().encode(JSON.stringify(data));
+  const json = new TextEncoder().encode(JSON.stringify(compactData(data)));
   return toBase64Url(await pipe(json, new CompressionStream('deflate-raw')));
 }
 
 export async function decodeShare(text) {
   const bytes = await pipe(fromBase64Url(text), new DecompressionStream('deflate-raw'));
-  const data = JSON.parse(new TextDecoder().decode(bytes));
+  const data = expandData(JSON.parse(new TextDecoder().decode(bytes)));
   if (!isValidData(data)) throw new Error('Data di link tidak dikenali');
   return normalizeData(data);
 }

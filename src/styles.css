@@ -1305,6 +1305,103 @@ a {
   margin-top: 16px;
 }
 
+/* ===== Cara Pakai ===== */
+.guide-hint {
+  background: var(--surface-1);
+  border: 1px dashed var(--axis);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+.guide ul,
+.guide ol {
+  padding-left: 22px;
+  margin: 0 0 12px;
+}
+
+.guide li {
+  margin-bottom: 6px;
+}
+
+.guide code {
+  background: var(--surface-3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+.flow {
+  list-style: none;
+  padding: 0 !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  counter-reset: flow;
+}
+
+.flow li {
+  counter-increment: flow;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  margin: 0 !important;
+}
+
+.flow li b::before {
+  content: counter(flow) '. ';
+  color: var(--brand);
+}
+
+.flow li span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.guide-step h2 {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.guide-step h2 .step {
+  flex: none;
+}
+
+.example {
+  background: var(--brand-soft);
+  border-radius: 10px;
+  padding: 4px 14px 8px;
+  margin-bottom: 12px;
+}
+
+.faq {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0;
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.share-raw {
+  margin: 4px 0 8px;
+}
+
+.share-raw summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
 /* ===== Pesan kalau halaman error ===== */
 .crash {
   border-left: 5px solid var(--critical-text);
