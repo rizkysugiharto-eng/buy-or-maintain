@@ -82,7 +82,7 @@ function Comparison({ plan }) {
               return (
                 <section key={v.key} className="card variant-card" style={{ '--accent': seriesVar(colorOf(v)) }}>
                   <h3>
-                    <span className="swatch" style={{ background: seriesVar(colorOf(v)) }} />
+                    <span className="swatch" style={{ background: seriesVar(colorOf(v)), color: seriesVar(colorOf(v)) }} />
                     {v.material.name}
                   </h3>
                   <div className="tags">
@@ -228,7 +228,7 @@ function MaterialEditor({ material, index }) {
   return (
     <details className="card material-editor">
       <summary>
-        <span className="swatch" style={{ background: seriesVar(index) }} />
+        <span className="swatch" style={{ background: seriesVar(index), color: seriesVar(index) }} />
         <strong>{material.name}</strong>
         <span className="muted">{formatCompact(materialCostPerM2(material))}/m²</span>
         <span className="small muted">{usedBy ? `dipakai ${usedBy} rencana` : 'belum dipakai'}</span>

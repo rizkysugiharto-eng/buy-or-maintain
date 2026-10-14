@@ -171,3 +171,13 @@ describe('parseNumber', () => {
     ['x', null],
   ])('%s → %s', (text, expected) => expect(parseNumber(text)).toBe(expected));
 });
+
+describe('Sumber angka', () => {
+  it('setiap baris punya langkah cara dapetin angka & tempat memasukkannya', async () => {
+    const { SOURCES } = await import('../data/sources.js');
+    for (const src of SOURCES) {
+      expect(src.how.length).toBeGreaterThan(1);
+      expect(src.where).toBeTruthy();
+    }
+  });
+});

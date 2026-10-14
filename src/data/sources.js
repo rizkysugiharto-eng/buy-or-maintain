@@ -8,6 +8,13 @@ export const SOURCES = [
     usedIn: 'Data properti',
     now: 'Keterangan penjual / iklan',
     verify: 'Sertifikat SHM, PBG/IMB, SPPT PBB (luas tanah & bangunan resmi), ukur ulang di lokasi',
+    where: 'Properti → Data properti',
+    how: [
+      'Minta fotokopi SHM, PBG/IMB, dan SPPT PBB tahun terakhir ke penjual.',
+      'Luas tanah & bangunan resmi ada di SPPT PBB dan SHM — pakai angka itu, bukan angka iklan.',
+      'Minta notaris/PPAT melakukan pengecekan sertifikat ke BPN (memastikan asli, bebas sengketa & agunan).',
+      'Hitung sendiri jumlah kamar saat survei lokasi.',
+    ],
   },
   {
     key: 'sewa-sekarang',
@@ -15,6 +22,13 @@ export const SOURCES = [
     usedIn: 'Rencana beli jadi',
     now: 'Klaim penjual (mis. “penuh, rata-rata Rp1,7 jt”)',
     verify: 'Mutasi rekening uang sewa 12 bulan terakhir + kontrak tiap penyewa',
+    where: 'Rencana → Uang sewa (sewa per kamar & rata-rata kamar terisi)',
+    how: [
+      'Minta mutasi rekening penerimaan sewa 12 bulan terakhir (atau buku catatan sewa).',
+      'Jumlahkan uang sewa setahun ÷ 12 ÷ jumlah kamar = sewa rata-rata yang benar-benar masuk.',
+      'Hitung berapa bulan tiap kamar terisi dalam setahun → rata-rata kamar terisi (%).',
+      'Minta kontrak penyewa yang masih berjalan; kalau bisa, ngobrol langsung dengan 1–2 penyewa.',
+    ],
   },
   {
     key: 'harga-tanah',
@@ -22,6 +36,13 @@ export const SOURCES = [
     usedIn: 'Harga wajar',
     now: 'Iklan Rumah123 / Brighton — harga penawaran, bukan harga transaksi',
     verify: 'Peta Zona Nilai Tanah BPN (bhumi.atrbpn.go.id), NJOP di SPPT PBB, harga transaksi tetangga',
+    where: 'Properti → Harga wajar (harga tanah sekitar terendah & tertinggi)',
+    how: [
+      'Buka bhumi.atrbpn.go.id → buka peta → nyalakan lapisan “Zona Nilai Tanah” → klik lokasi properti. Catat kisaran nilai per m².',
+      'Lihat NJOP tanah per m² di SPPT PBB (biasanya di bawah harga pasar — pakai sebagai batas bawah).',
+      'Tanya RT/warga atau agen properti lokal: harga transaksi tanah di jalan yang sama 1–2 tahun terakhir.',
+      'Isi harga terendah & tertinggi dari gabungan sumber di atas.',
+    ],
   },
   {
     key: 'nilai-wajar',
@@ -29,6 +50,13 @@ export const SOURCES = [
     usedIn: 'Harga wajar & rapor',
     now: 'Hitungan aplikasi (nilai tanah + bangunan, dan dari uang sewa)',
     verify: 'Laporan penilaian KJPP (Kantor Jasa Penilai Publik berizin Kemenkeu) — satu-satunya yang resmi',
+    where: 'Properti → Harga wajar (nilai bangunan + isi), dan Catatan',
+    how: [
+      'Cari KJPP yang terdaftar di Kemenkeu (daftar ada di situs PPPK Kemenkeu / MAPPI).',
+      'Minta penawaran biaya penilaian untuk 1 properti — cukup untuk properti yang paling serius dikejar.',
+      'Kalau beli dengan KPR, bank biasanya menilai sendiri; minta hasil nilai taksirannya.',
+      'Pakai nilai dari laporan sebagai pembanding harga yang diminta penjual.',
+    ],
   },
   {
     key: 'sewa-pasar',
@@ -36,6 +64,13 @@ export const SOURCES = [
     usedIn: 'Rencana renovasi & bangun',
     now: 'Artikel Mamikos + perkiraan',
     verify: 'Survei langsung 5–10 kos sekitar: harga, fasilitas, jumlah kamar kosong',
+    where: 'Rencana → Uang sewa (renovasi & bangun baru)',
+    how: [
+      'Lihat Mamikos/OLX/Google Maps untuk daftar kos dalam radius ±500 m.',
+      'Datangi atau telepon 5–10 kos; catat harga, fasilitas (AC, kamar mandi dalam, parkir), dan berapa kamar kosong.',
+      'Ambil harga kos yang fasilitasnya paling mirip dengan rencana kamu.',
+      'Kamar terisi ≈ (kamar penuh ÷ total kamar) rata-rata dari kos yang disurvei.',
+    ],
   },
   {
     key: 'biaya-bangun',
@@ -43,6 +78,13 @@ export const SOURCES = [
     usedIn: 'Paket material',
     now: 'Artikel Medcom: kisaran biaya kontraktor 2025',
     verify: 'HSPK Kota Malang tahun berjalan + 2–3 RAB tertulis dari kontraktor lokal',
+    where: 'Banding Material → komponen tiap paket (total = biaya per m²)',
+    how: [
+      'Cari “HSPK Kota Malang” tahun berjalan (standar harga satuan Pemkot; biasanya di situs JDIH atau pengadaan Pemkot Malang).',
+      'Siapkan gambar/denah sederhana + spesifikasi (lantai, dinding, atap, jumlah kamar mandi).',
+      'Minta RAB tertulis dan rinci dari 2–3 kontraktor lokal dengan gambar & spesifikasi yang sama.',
+      'Biaya per m² = total RAB (tanpa isi kamar) ÷ luas bangunan. Bandingkan dengan HSPK.',
+    ],
   },
   {
     key: 'komponen-material',
@@ -50,6 +92,13 @@ export const SOURCES = [
     usedIn: 'Banding Material',
     now: 'Perkiraan — dibagi supaya totalnya sama dengan biaya bangun per m²',
     verify: 'RAB kontraktor per pekerjaan (biaya ÷ luas bangunan); acuan AHSP Permen PUPR No. 1/2022',
+    where: 'Banding Material → Daftar paket material → komponen',
+    how: [
+      'Dari RAB rinci, kelompokkan biaya per pekerjaan: pondasi & struktur, dinding, atap, lantai, plafon & cat, pintu & jendela, kamar mandi, listrik & air.',
+      'Setiap kelompok ÷ luas bangunan = harga per m² komponen itu. Contoh: dinding Rp157 jt ÷ 350 m² = Rp450 rb/m².',
+      'Untuk material pengganti (mis. hebel vs bata merah), minta kontraktor menghitung ulang baris itu saja.',
+      'Acuan cara hitung resmi: AHSP Permen PUPR No. 1/2022.',
+    ],
   },
   {
     key: 'efek-material',
@@ -57,6 +106,12 @@ export const SOURCES = [
     usedIn: 'Banding Material',
     now: 'Asumsi',
     verify: 'Tanya kontraktor & pengelola kos; bandingkan sewa kos lain dengan finishing serupa',
+    where: 'Banding Material → Pengaruh ke hasil',
+    how: [
+      'Tanya kontraktor: dengan material ini, lama bangun lebih cepat/lambat berapa bulan?',
+      'Tanya pengelola kos atau pemilik kos lain: biaya perawatan per tahun & kapan perlu cat ulang/ganti atap.',
+      'Bandingkan sewa kos dengan finishing serupa saat survei sewa → selisihnya jadi “Sewa ± %”.',
+    ],
   },
   {
     key: 'biaya-rutin',
@@ -64,6 +119,13 @@ export const SOURCES = [
     usedIn: 'Semua rencana',
     now: 'Asumsi di laporan (Rp1 jt + Rp0,21 jt/kamar/bulan, perawatan 6%)',
     verify: 'Tagihan 3–6 bulan terakhir & gaji penjaga dari penjual; SPPT PBB',
+    where: 'Rencana → Biaya rutin & pengaturan lanjutan',
+    how: [
+      'Minta ke penjual tagihan 3–6 bulan terakhir: PLN (listrik bersama), PDAM, wifi, sampah/keamanan.',
+      'Tanyakan gaji penjaga/kebersihan per bulan.',
+      'Biaya tetap per bulan = penjaga + wifi + iuran; biaya per kamar = (air + listrik bersama) ÷ jumlah kamar.',
+      'PBB per tahun ada di SPPT PBB.',
+    ],
   },
   {
     key: 'surat-surat',
@@ -71,6 +133,12 @@ export const SOURCES = [
     usedIn: 'Semua rencana',
     now: 'BPHTB maks. 5% (UU No. 1/2022) + notaris/PPAT ±1–1,5%',
     verify: 'Hitungan BPHTB dari Bapenda Kota Malang + penawaran biaya notaris/PPAT',
+    where: 'Rencana → Biaya surat-surat (%)',
+    how: [
+      'Tanyakan hitungan BPHTB ke Bapenda Kota Malang (tarif maks. 5% dari nilai transaksi dikurangi batas tidak kena pajak).',
+      'Minta penawaran biaya akta jual beli & balik nama dari 1–2 notaris/PPAT.',
+      'Biaya surat-surat % = (BPHTB + biaya notaris/PPAT + pengecekan) ÷ harga beli × 100.',
+    ],
   },
   {
     key: 'pajak-sewa',
@@ -78,6 +146,12 @@ export const SOURCES = [
     usedIn: 'Pengaturan lanjutan rencana',
     now: 'PPh final sewa tanah/bangunan 10% (PP No. 34/2017) — belum dimasukkan di contoh',
     verify: 'Konsultan pajak: tarif bisa berbeda tergantung atas nama siapa dan bentuk usahanya',
+    where: 'Rencana → Biaya rutin & pengaturan lanjutan → Pajak penghasilan sewa',
+    how: [
+      'Datang ke KPP Pratama Malang (konsultasi gratis) atau tanya konsultan pajak.',
+      'Tanyakan tarif untuk kos atas nama pribadi vs badan usaha, dan dihitung dari sewa yang diterima atau omzet.',
+      'Isi persentasenya di rencana (contoh: 10 untuk PPh final sewa 10%).',
+    ],
   },
   {
     key: 'asumsi-keluarga',
@@ -85,6 +159,12 @@ export const SOURCES = [
     usedIn: 'Rapor & skenario',
     now: 'Asumsi (mengikuti laporan)',
     verify: 'Sepakati bersama keluarga; bandingkan target hasil dengan bunga deposito/SBN terbaru',
+    where: 'Data & Asumsi',
+    how: [
+      'Sepakati bersama keluarga: dana yang siap dipakai (di luar dana darurat 6–12 bulan).',
+      'Cek bunga deposito bank & imbal hasil SBN ritel (ORI/SR/ST) yang sedang berlaku → jadikan patokan hasil bersih minimal.',
+      'Sepakati batas balik modal yang masih bisa diterima (mis. 18 tahun) dan seberapa pesimis skenario ujinya.',
+    ],
   },
 ];
 

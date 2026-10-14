@@ -149,6 +149,7 @@ export default function Layout({ children }) {
       <footer className="footer">
         Semua angka adalah perkiraan, bukan jaminan hasil dan bukan nasihat keuangan profesional. Keputusan akhir tetap perlu cek
         lapangan oleh tukang/insinyur dan cek surat-surat oleh notaris/PPAT.
+        <span className="version">Versi {typeof __APP_VERSION__ === 'undefined' ? 'pengembangan' : __APP_VERSION__}</span>
       </footer>
 
       {sharing && <ShareDialog onClose={() => setSharing(false)} />}

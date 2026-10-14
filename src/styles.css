@@ -249,6 +249,12 @@ a {
   font-size: 0.8rem;
 }
 
+.footer .version {
+  display: block;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
 .page-head {
   display: flex;
   justify-content: space-between;
@@ -1492,6 +1498,33 @@ a {
   margin: 0;
 }
 
+.source-how {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.source-how summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.source-how ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.source-how li {
+  margin-bottom: 4px;
+}
+
+.source-how p {
+  margin: 0;
+}
+
 @media (max-width: 560px) {
   .source-meta {
     grid-template-columns: 1fr;
@@ -1712,6 +1745,21 @@ a {
   .chart-card,
   .hbars li {
     break-inside: avoid;
+  }
+
+  /* Garis (border) selalu ikut tercetak, walau printer/Chrome mematikan warna latar */
+  .hbar-fill {
+    background: none !important;
+    bottom: auto;
+    height: 0;
+    border-top: 22px solid currentColor;
+  }
+
+  .swatch {
+    background: none !important;
+    width: 0;
+    height: 0;
+    border: 6px solid currentColor;
   }
 
   .guide-hint,

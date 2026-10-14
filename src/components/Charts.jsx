@@ -64,7 +64,7 @@ export function HBarChart({ data, formatValue, target, targetLabel, domainMax })
         <li key={d.label}>
           <span className="hbar-label">{d.label}</span>
           <div className="hbar-track">
-            <div className="hbar-fill" style={{ width: pct(d.value), background: seriesVar(d.colorIndex) }} />
+            <div className="hbar-fill" style={{ width: pct(d.value), background: seriesVar(d.colorIndex), color: seriesVar(d.colorIndex) }} />
             <span className="hbar-value" style={{ left: `calc(${pct(d.value)} + 8px)` }}>
               {formatValue(d.value, d)}
             </span>
@@ -132,7 +132,7 @@ export function Legend({ items }) {
     <ul className="legend">
       {items.map((it) => (
         <li key={it.key}>
-          <span className="swatch" style={{ background: seriesVar(it.colorIndex) }} />
+          <span className="swatch" style={{ background: seriesVar(it.colorIndex), color: seriesVar(it.colorIndex) }} />
           {it.label}
         </li>
       ))}

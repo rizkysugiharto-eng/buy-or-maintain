@@ -119,6 +119,17 @@ function SourcesSection() {
                 <dt>Cara memastikan</dt>
                 <dd>{src.verify}</dd>
               </dl>
+              <details className="source-how">
+                <summary>Cara dapetin angkanya</summary>
+                <ol>
+                  {src.how.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="small">
+                  <b>Masukkan di:</b> {src.where}
+                </p>
+              </details>
               <TextField
                 label="Catatan / bukti"
                 value={state.note}
