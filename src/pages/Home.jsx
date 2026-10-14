@@ -1,0 +1,282 @@
+// Ringkasan untuk keluarga: kesimpulan per properti, rapor Baik/Cukup/Kurang,
+// grafik perbandingan dengan penjelasan "Artinya", dan tabel lengkap.
+
+import { Link } from 'react-router-dom';
+import { CashflowChart, HBarChart, Legend } from '../components/Charts.jsx';
+import { RatingBadge } from '../components/Fields.jsx';
+import Icon from '../components/Icon.jsx';
+import { primaryRow, useData } from '../context/DataContext.jsx';
+import { PLAN_TYPES, reportCard } from '../lib/calc.js';
+import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
+import { rowLabel, shortName } from '../lib/labels.js';
+
+function Stat({ label, value, sub }) {
+  return (
+    <div className="stat">
+      <span className="stat-label">{label}</span>
+      <strong className="stat-value">{value}</strong>
+      {sub && <span className="stat-sub">{sub}</span>}
+    </div>
+  );
+}
+
+function ChartBlock({ number, title, help, children, meaning }) {
+  return (
+    <section className="card chart-card">
+      <h3>
+        {number}. {title}
+      </h3>
+      {help && <p className="muted">{help}</p>}
+      {children}
+      {meaning && (
+        <p className="meaning">
+          <b>Artinya:</b> {meaning}
+        </p>
+      )}
+    </section>
+  );
+}
+
+const best = (rows, get, lower = false) =>
+  rows.filter((r) => get(r) != null).sort((a, b) => (lower ? get(a) - get(b) : get(b) - get(a)))[0];
+
+export default function Home() {
+  const { data, analysis, loadExample, addProperty } = useData();
+  const { settings } = data;
+  const properties = data.properties;
+
+  if (properties.length === 0) {
+    return (
+      <div className="empty">
+        <h1>Belum ada properti</h1>
+        <p>Mulai dengan menambahkan properti yang sedang dipertimbangkan, atau lihat dulu contoh pengisiannya.</p>
+        <div className="btn-row center">
+          <Link className="btn primary" to="/properti" onClick={() => addProperty()}>
+            <Icon name="plus" /> Tambah properti
+          </Link>
+          <button type="button" className="btn" onClick={loadExample}>
+            Lihat contoh
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const colorOf = (property) => properties.findIndex((p) => p.id === property.id);
+  const cards = properties.map((property) => {
+    const row = primaryRow(analysis, property);
+    return { property, row, card: reportCard(property, row?.result, settings) };
+  });
+  const rows = analysis.rows;
+  const bar = (get) => rows.map((r) => ({ label: rowLabel(r), value: get(r), colorIndex: colorOf(r.property), row: r }));
+
+  const fastest = best(rows, (r) => r.result.paybackYears, true);
+  const cheapest = best(rows, (r) => r.result.capex.total, true);
+  const richest = best(rows, (r) => r.result.noiMonthly);
+  const productive = best(rows, (r) => r.result.per100jt);
+  const slow = rows.filter((r) => r.result.paybackYears == null || r.result.paybackYears > settings.paybackOk);
+  const legend = properties.map((p, i) => ({ key: p.id, label: shortName(p), colorIndex: i }));
+
+  return (
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <h1>{data.title || 'Mana yang paling layak?'}</h1>
+          <p className="muted">
+            Perbandingan {properties.length} properti · {rows.length} pilihan rencana · hitungan mulai {monthLabel(settings.startMonth, 0)}
+          </p>
+        </div>
+        <button type="button" className="btn no-print" onClick={() => window.print()}>
+          <Icon name="print" /> Cetak / PDF
+        </button>
+      </div>
+
+      <section className="card intinya">
+        <h2>Intinya</h2>
+        <ul>
+          {cards.map(({ property, row, card }) => (
+            <li key={property.id}>
+              <b>{shortName(property)}</b> — {card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : 'belum dinilai'}{' '}
+              {row
+                ? `Modal ±${formatCompact(row.result.capex.total, 1)}, uang bersih ±${formatCompact(row.result.noiMonthly)}/bulan, modal kembali ${formatYears(row.result.paybackYears, settings.maxYears)}${row.result.incomeStartMonth ? ` (mulai dapat uang setelah ${formatMonths(row.result.incomeStartMonth)})` : ', uang masuk sejak bulan pertama'}.`
+                : 'Belum ada rencana — buka propertinya lalu tambahkan rencana.'}
+              {property.verdictNote && <span className="muted"> {property.verdictNote}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="property-cards">
+        {cards.map(({ property, row, card }, i) => (
+          <Link key={property.id} to={`/properti/${property.id}`} className="card property-card" style={{ '--accent': `var(--series-${(i % 8) + 1})` }}>
+            <div className="property-card-head">
+              <div>
+                <h3>{property.name}</h3>
+                <p className="muted small">
+                  {formatCompact(property.askingPrice, 1)}
+                  {row ? ` · ${PLAN_TYPES[row.plan.type].label.toLowerCase()}: ${rowLabel(row, { withProperty: false })}` : ''}
+                </p>
+              </div>
+              {card.verdict && <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge>}
+            </div>
+            {row ? (
+              <div className="stats">
+                <Stat label="Total modal" value={formatCompact(row.result.capex.total, 1)} />
+                <Stat label="Uang bersih / bulan" value={formatCompact(row.result.noiMonthly)} />
+                <Stat
+                  label="Modal kembali"
+                  value={formatYears(row.result.paybackYears, settings.maxYears)}
+                  sub={row.result.paybackMonth != null ? `±${monthLabel(settings.startMonth, row.result.paybackMonth)}` : null}
+                />
+                <Stat label="Mulai dapat uang" value={formatMonths(row.result.incomeStartMonth)} />
+              </div>
+            ) : (
+              <p className="muted">Belum ada rencana.</p>
+            )}
+            <span className="card-link">
+              Lihat detail <Icon name="chevron" size={14} />
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      <section className="card">
+        <h2>Rapor singkat</h2>
+        <p className="muted">Setiap properti dinilai Baik, Cukup, atau Kurang memakai rencana utamanya.</p>
+        <div className="table-wrap">
+          <table className="table rapor">
+            <thead>
+              <tr>
+                <th>Aspek</th>
+                {cards.map(({ property }) => (
+                  <th key={property.id}>{shortName(property)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cards[0].card.rows.map((aspect, idx) => (
+                <tr key={aspect.key}>
+                  <th scope="row">{aspect.label}</th>
+                  {cards.map(({ property, card }) => (
+                    <td key={property.id}>
+                      <RatingBadge rating={card.rows[idx].rating} />
+                      {card.rows[idx].note && <div className="small muted">{card.rows[idx].note}</div>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="verdict-row">
+                <th scope="row">Kesimpulan</th>
+                {cards.map(({ property, card }) => (
+                  <td key={property.id}>{card.verdict ? <RatingBadge rating={card.verdict.level}>{card.verdict.label}</RatingBadge> : '–'}</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {rows.length > 0 && (
+        <>
+          <h2 className="section-title">Perbandingan dalam gambar</h2>
+          <Legend items={legend} />
+          <div className="chart-grid">
+            <ChartBlock
+              number={1}
+              title="Berapa total modal yang harus disiapkan?"
+              help="Harga beli + biaya surat-surat + biaya bangun/renovasi. Makin pendek makin ringan."
+              meaning={cheapest && `Modal paling ringan: ${rowLabel(cheapest)} (${formatCompact(cheapest.result.capex.total, 1)}).`}
+            >
+              <HBarChart data={bar((r) => r.result.capex.total)} formatValue={(v) => formatCompact(v, 1)} />
+            </ChartBlock>
+            <ChartBlock
+              number={2}
+              title="Berapa uang bersih yang masuk setiap bulan?"
+              help="Uang sewa setelah dipotong kamar kosong dan semua biaya rutin. Makin panjang makin baik."
+              meaning={richest && `Paling besar: ${rowLabel(richest)} (±${formatCompact(richest.result.noiMonthly)}/bulan).`}
+            >
+              <HBarChart data={bar((r) => r.result.noiMonthly)} formatValue={(v) => formatCompact(v)} />
+            </ChartBlock>
+            <ChartBlock
+              number={3}
+              title="Berapa tahun sampai modal kembali?"
+              help={`Makin pendek makin baik. Garis putus-putus = batas ideal ±${settings.paybackGood} tahun.`}
+              meaning={
+                fastest &&
+                `Paling cepat: ${rowLabel(fastest)} (${formatYears(fastest.result.paybackYears)}).` +
+                  (slow.length ? ` ${slow.length} pilihan butuh lebih dari ${settings.paybackOk} tahun.` : '')
+              }
+            >
+              <HBarChart
+                data={bar((r) => r.result.paybackYears ?? settings.maxYears)}
+                formatValue={(v, d) => (d.row.result.paybackYears == null ? `>${settings.maxYears} th` : `±${Math.round(v)} th`)}
+                target={settings.paybackGood}
+                targetLabel={`batas ideal ±${settings.paybackGood} tahun`}
+              />
+            </ChartBlock>
+            <ChartBlock
+              number={4}
+              title="Dari setiap Rp100 juta modal, berapa yang kembali per tahun?"
+              help="Cara paling adil membandingkan pilihan yang modalnya berbeda-beda."
+              meaning={productive && `Paling produktif: ${rowLabel(productive)} — ±${formatCompact(productive.result.per100jt)} per tahun (${formatPercent(productive.result.netYield)}).`}
+            >
+              <HBarChart data={bar((r) => r.result.per100jt)} formatValue={(v) => formatCompact(v)} />
+            </ChartBlock>
+          </div>
+
+          <ChartBlock
+            number={5}
+            title="Perjalanan uang dari tahun ke tahun"
+            help="Mulai dari minus sebesar modal, lalu naik saat uang sewa masuk. Saat garis menyentuh garis tebal Rp0, modal sudah kembali."
+            meaning="Garis yang mulai paling dalam butuh modal paling besar; garis yang paling curam paling cepat mengumpulkan uang."
+          >
+            <CashflowChart
+              years={settings.chartYears}
+              series={cards
+                .filter((c) => c.row)
+                .map((c) => ({ key: c.property.id, label: rowLabel(c.row), colorIndex: colorOf(c.property), yearly: c.row.result.yearly }))}
+            />
+            <Legend items={cards.filter((c) => c.row).map((c) => ({ key: c.property.id, label: rowLabel(c.row), colorIndex: colorOf(c.property) }))} />
+          </ChartBlock>
+
+          <details className="card details-card">
+            <summary>Tabel lengkap semua pilihan (diurutkan dari yang paling cepat balik modal)</summary>
+            <div className="table-wrap">
+              <table className="table numbers">
+                <thead>
+                  <tr>
+                    <th>Pilihan</th>
+                    <th>Total modal</th>
+                    <th>Uang bersih / bulan</th>
+                    <th>Hasil bersih / tahun</th>
+                    <th>Modal kembali</th>
+                    <th>Mulai dapat uang</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...rows]
+                    .sort((a, b) => (a.result.paybackYears ?? 1e9) - (b.result.paybackYears ?? 1e9))
+                    .map((r) => (
+                      <tr key={r.key}>
+                        <th scope="row">
+                          <Link to={`/rencana/${r.plan.id}`}>{rowLabel(r)}</Link>
+                        </th>
+                        <td>{formatCompact(r.result.capex.total, 2)}</td>
+                        <td>{formatCompact(r.result.noiMonthly)}</td>
+                        <td>{formatPercent(r.result.netYield)}</td>
+                        <td>{formatYears(r.result.paybackYears, settings.maxYears)}</td>
+                        <td>{formatMonths(r.result.incomeStartMonth)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="small muted">
+              Hasil bersih = uang bersih setahun ÷ total modal. Belum memperhitungkan kenaikan harga tanah{settings.rentGrowthPct ? '' : ' dan kenaikan sewa'}.
+            </p>
+          </details>
+        </>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,147 @@
+// Kerangka aplikasi: judul, menu utama (3 menu + pengaturan), tombol Bagikan, dan pesan pemberitahuan.
+
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { useData } from '../context/DataContext.jsx';
+import { shareUrl } from '../lib/storage.js';
+import Icon from './Icon.jsx';
+
+const NAV = [
+  { to: '/', label: 'Ringkasan', icon: 'home' },
+  { to: '/properti', label: 'Properti', icon: 'building' },
+  { to: '/material', label: 'Banding Material', icon: 'layers' },
+  { to: '/pengaturan', label: 'Data & Asumsi', icon: 'settings' },
+];
+
+export function ShareDialog({ onClose }) {
+  const { data } = useData();
+  const [url, setUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    shareUrl(data).then(setUrl);
+  }, [data]);
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      document.getElementById('share-url')?.select();
+      document.execCommand?.('copy');
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  const waText = `Ini perbandingan properti kos keluarga, tinggal buka link-nya ya:\n${url}`;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2 id="share-title">Bagikan ke keluarga</h2>
+          <button type="button" className="btn-icon" onClick={onClose} aria-label="Tutup">
+            <Icon name="x" />
+          </button>
+        </div>
+        <p>
+          Kirim link ini lewat WhatsApp. Siapa pun yang membukanya akan melihat <b>angka yang sama persis</b> dengan yang ada di layar
+          kamu sekarang — tanpa perlu daftar atau login.
+        </p>
+        <textarea id="share-url" className="share-url" readOnly value={url} rows={3} onFocus={(e) => e.target.select()} />
+        <div className="btn-row">
+          <a className="btn primary" href={`https://wa.me/?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener noreferrer">
+            Kirim lewat WhatsApp
+          </a>
+          <button type="button" className="btn" onClick={copy} disabled={!url}>
+            <Icon name={copied ? 'check' : 'copy'} />
+            {copied ? 'Tersalin' : 'Salin link'}
+          </button>
+        </div>
+        <p className="muted small">
+          🔒 Datanya ada di dalam link itu sendiri, tidak disimpan di server mana pun. Jadi cukup bagikan ke orang yang memang boleh
+          melihat. Kalau ada angka yang diubah, kirim link baru.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function Layout({ children }) {
+  const { prefs, setPref, notice, setNotice, undoReplace, data } = useData();
+  const [sharing, setSharing] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => window.scrollTo(0, 0), [location.pathname]);
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="header-inner">
+          <Link to="/" className="brand">
+            <span className="brand-mark" aria-hidden="true">
+              <Icon name="building" size={18} />
+            </span>
+            <span>
+              <span className="brand-title">Beli atau Rawat?</span>
+              <span className="brand-sub">{data.title || 'Perbandingan properti kos keluarga'}</span>
+            </span>
+          </Link>
+          <div className="header-tools">
+            <button type="button" className="btn primary" onClick={() => setSharing(true)} aria-label="Bagikan">
+              <Icon name="share" />
+              <span>Bagikan</span>
+            </button>
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => setPref('theme', prefs.theme === 'dark' ? 'light' : 'dark')}
+              aria-label={prefs.theme === 'dark' ? 'Ganti ke tampilan terang' : 'Ganti ke tampilan gelap'}
+              title="Terang / gelap"
+            >
+              <Icon name={prefs.theme === 'dark' ? 'sun' : 'moon'} />
+            </button>
+          </div>
+        </div>
+        <nav className="tabs" aria-label="Menu utama">
+          {NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === '/'}>
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+
+      <main className="main">
+        {notice && (
+          <div className="notice" role="status">
+            <Icon name="info" />
+            <span>{notice.message}</span>
+            {notice.canUndo && (
+              <button type="button" className="btn small" onClick={undoReplace}>
+                Kembalikan data sebelumnya
+              </button>
+            )}
+            <button type="button" className="btn-icon" onClick={() => setNotice(null)} aria-label="Tutup pesan">
+              <Icon name="x" />
+            </button>
+          </div>
+        )}
+        {children}
+      </main>
+
+      <footer className="footer">
+        Semua angka adalah perkiraan, bukan jaminan hasil dan bukan nasihat keuangan profesional. Keputusan akhir tetap perlu cek
+        lapangan oleh tukang/insinyur dan cek surat-surat oleh notaris/PPAT.
+      </footer>
+
+      {sharing && <ShareDialog onClose={() => setSharing(false)} />}
+    </div>
+  );
+}
