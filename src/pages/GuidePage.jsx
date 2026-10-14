@@ -57,6 +57,10 @@ export default function GuidePage() {
           </li>
           <li>Kalau dapat link dari keluarga: cukup buka link-nya, data langsung masuk.</li>
           <li>Setelah itu data tersimpan otomatis di HP/laptop ini — besok tidak perlu buka file lagi.</li>
+          <li>
+            <b>Ringkasan</b> tampil ringkas dulu (kesimpulan, kartu, 2 grafik). Tekan <b>Lihat detail lengkap</b> untuk rapor, semua pilihan,
+            dan grafik lainnya. Saat dicetak, detail lengkap selalu ikut.
+          </li>
         </ul>
       </Step>
 
@@ -125,6 +129,10 @@ export default function GuidePage() {
           </li>
           <li>
             Tanda <b>★</b> = rencana utama yang dipakai di Ringkasan. Ketuk bintang di rencana lain untuk menggantinya.
+          </li>
+          <li>
+            <b>Biaya surat-surat</b> dihitung otomatis sesuai aturan Kota Malang: BPHTB 5% × (harga − Rp80 jt) + honor PPAT maks. 1% + balik
+            nama BPN. Matikan centangnya kalau sudah dapat angka pasti dari notaris.
           </li>
           <li>Biaya rutin (air, wifi, penjaga, PBB, fee pengelola, pajak) ada di “Biaya rutin & pengaturan lanjutan”.</li>
         </ul>
@@ -209,6 +217,13 @@ export default function GuidePage() {
               <tr>
                 <th scope="row">Grafik perjalanan uang</th>
                 <td>Mulai minus sebesar modal, naik saat sewa masuk. Garis menyentuh Rp0 = modal kembali.</td>
+              </tr>
+              <tr>
+                <th scope="row">Dibanding SBN / deposito</th>
+                <td>
+                  Di Ringkasan ada batang abu-abu: hasil kalau uang yang sama ditaruh di SBN ritel atau deposito. Kalau batang kos lebih pendek dari
+                  SBN, secara uang bulanan kos kalah — keuntungannya tinggal dari kenaikan harga tanah (belum dihitung).
+                </td>
               </tr>
               <tr>
                 <th scope="row">Rapor</th>

@@ -129,6 +129,17 @@ function SourcesSection() {
                 <p className="small">
                   <b>Masukkan di:</b> {src.where}
                 </p>
+                {src.links?.length > 0 && (
+                  <ul className="source-links small">
+                    {src.links.map((l) => (
+                      <li key={l.url}>
+                        <a href={l.url} target="_blank" rel="noopener noreferrer">
+                          {l.label} ↗
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </details>
               <TextField
                 label="Catatan / bukti"
@@ -255,6 +266,42 @@ export default function SettingsPage() {
           <NumberField label="Kenaikan sewa per tahun" unit="%" value={s.rentGrowthPct} onChange={set('rentGrowthPct')} help="0 = sewa dianggap tetap (seperti di laporan)" min={-20} max={30} />
           <NumberField label="Kenaikan biaya rutin per tahun" unit="%" value={s.costGrowthPct} onChange={set('costGrowthPct')} min={-20} max={30} />
           <NumberField label="Panjang grafik perjalanan uang" unit="tahun" value={s.chartYears} onChange={set('chartYears')} min={5} max={60} />
+        </div>
+
+        <h3>Pembanding: kalau uangnya ditaruh di tempat lain</h3>
+        <div className="form-grid">
+          <NumberField
+            label="SBN ritel (imbal hasil)"
+            unit="%/tahun"
+            value={s.benchmarkSbn}
+            onChange={set('benchmarkSbn')}
+            help="SR025 (Agustus 2026): 6,8–6,9%. Ganti dengan seri SBN terbaru."
+            min={0}
+            max={30}
+          />
+          <NumberField
+            label="Deposito bank"
+            unit="%/tahun"
+            value={s.benchmarkDeposit}
+            onChange={set('benchmarkDeposit')}
+            help="Bunga penjaminan LPS bank umum Okt 2026–Jan 2027: 3,75%"
+            min={0}
+            max={30}
+          />
+        </div>
+
+        <h3>Aturan biaya surat-surat (dipakai kalau rencana memilih “hitung otomatis”)</h3>
+        <div className="form-grid">
+          <NumberField label="BPHTB" unit="%" value={s.bphtbPct} onChange={set('bphtbPct')} help="Kota Malang: 5% (Perda No. 4/2023)" min={0} max={10} />
+          <MoneyField
+            label="Batas tidak kena BPHTB (NPOPTKP)"
+            value={s.npoptkp}
+            onChange={set('npoptkp')}
+            help="Kota Malang: Rp80 jt (pemberitaan Bapenda; pastikan ke Bapenda)"
+            allowEmpty={false}
+          />
+          <NumberField label="Honor notaris/PPAT (maksimal)" unit="%" value={s.ppatPct} onChange={set('ppatPct')} help="Batas atas PP No. 24/2016: 1% harga transaksi" min={0} max={5} />
+          <NumberField label="Balik nama di BPN" unit="‰ harga" value={s.bpnPermil} onChange={set('bpnPermil')} help="± harga ÷ 1.000 + Rp50 rb" min={0} max={10} />
         </div>
         <ScenarioFields
           label="Keadaan pesimis"

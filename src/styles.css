@@ -783,6 +783,37 @@ a {
   background: var(--surface-2);
 }
 
+.example-notice {
+  border-left: 5px solid var(--warning-text);
+  background: var(--warning-soft);
+}
+
+.example-notice h2 {
+  color: var(--warning-text);
+}
+
+.warn-text {
+  color: var(--warning-text);
+}
+
+.detail-toggle {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 20px;
+}
+
+.detail-toggle .btn[aria-expanded='true'] .icon {
+  transform: rotate(-90deg);
+}
+
+.detail-toggle .btn[aria-expanded='false'] .icon {
+  transform: rotate(90deg);
+}
+
+.hbars li.reference .hbar-label {
+  font-style: italic;
+}
+
 .meaning {
   background: var(--brand-soft);
   border-radius: 10px;
@@ -888,6 +919,44 @@ a {
 .field select:focus {
   border-color: var(--brand);
   outline: 2px solid var(--brand-soft);
+}
+
+.field-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.readout {
+  min-height: 44px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px dashed var(--axis);
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.check.wide {
+  grid-column: 1 / -1;
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--brand);
+  flex: none;
 }
 
 .field-help {
@@ -1519,6 +1588,11 @@ a {
 
 .source-how li {
   margin-bottom: 4px;
+}
+
+.source-links {
+  padding-left: 18px !important;
+  margin: 6px 0 0 !important;
 }
 
 .source-how p {

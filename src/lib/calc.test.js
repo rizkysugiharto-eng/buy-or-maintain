@@ -181,3 +181,21 @@ describe('Sumber angka', () => {
     }
   });
 });
+
+describe('Biaya surat-surat otomatis (aturan Kota Malang)', () => {
+  const plan = { ...kos1Plan, transactionAuto: true };
+  it('Kos #1 Rp3,2 M: BPHTB Rp156 jt + PPAT Rp32 jt + BPN ±Rp3,25 jt ≈ 6,0%', () => {
+    const r = analyze(plan, kos1, null);
+    near(r.capex.transaction, jt(191.25), 1);
+    near(r.capex.transactionPct, 5.98, 0.01);
+  });
+  it('harga maksimal memberi hasil bersih tepat sesuai target', () => {
+    const r = analyze(plan, kos1, null);
+    const atMax = analyze({ ...plan, purchasePrice: r.maxPrice }, kos1, null);
+    near(atMax.netYield, DEFAULT_SETTINGS.targetYieldLow, 0.001);
+  });
+  it('harga di bawah NPOPTKP tidak kena BPHTB', () => {
+    const r = analyze({ ...plan, purchasePrice: jt(50) }, kos1, null);
+    near(r.capex.transaction, jt(0.5) + jt(0.05) + 50_000, 1);
+  });
+});

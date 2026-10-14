@@ -20,6 +20,7 @@ function planTemplate(property, type) {
     type,
     purchasePrice: null,
     transactionPct: 6.5,
+    transactionAuto: true,
     extraCosts: [],
     rooms: property.rooms || 10,
     rentPerRoom: jt(1.5),

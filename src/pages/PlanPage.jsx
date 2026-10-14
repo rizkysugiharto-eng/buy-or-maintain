@@ -6,6 +6,7 @@ import { CashflowChart, Legend } from '../components/Charts.jsx';
 import { CostList, MoneyField, NumberField, Segmented, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
+import { materialPricesVerified } from '../data/sources.js';
 import { PLAN_TYPES, SCENARIOS, analyze, materialCostPerM2 } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatPercent, formatYears, monthLabel } from '../lib/format.js';
 
@@ -84,7 +85,7 @@ export function ResultDetail({ plan, property, material, settings }) {
           <table className="table numbers compact">
             <tbody>
               <Line label="Harga beli" value={c.purchase} />
-              <Line label={`Surat-surat (${formatPercent(r.params.transactionPct)})`} value={c.transaction} />
+              <Line label={`Surat-surat (${formatPercent(c.transactionPct)})`} value={c.transaction} />
               {c.construction > 0 && <Line label="Konstruksi" value={c.construction} />}
               {c.furnishing > 0 && <Line label="Isi kamar" value={c.furnishing} />}
               {c.design > 0 && <Line label="Desain, izin, pengawasan" value={c.design} />}
@@ -104,7 +105,7 @@ export function ResultDetail({ plan, property, material, settings }) {
               <Line label="Perawatan" value={inc.maintenance} minus />
               <Line label="PBB" value={inc.pbb} minus />
               {inc.management > 0 && <Line label="Fee pengelola" value={inc.management} minus />}
-              {inc.tax > 0 && <Line label="Pajak penghasilan sewa" value={inc.tax} minus />}
+              {inc.tax > 0 && <Line label="Pajak penghasilan" value={inc.tax} minus />}
               <Line label="Uang bersih per tahun" value={inc.noi} strong />
             </tbody>
           </table>
@@ -223,15 +224,33 @@ export default function PlanPage() {
                 placeholder="Kosong = harga diminta"
                 help={plan.purchasePrice == null ? `Memakai harga yang diminta: ${formatCompact(property.askingPrice, 2)}. Isi kalau mau coba harga tawar.` : null}
               />
-              <NumberField
-                label="Biaya surat-surat"
-                unit="%"
-                value={plan.transactionPct}
-                onChange={set('transactionPct')}
-                help="Pajak beli (BPHTB), notaris/PPAT. Umumnya ±6,5%"
-                min={0}
-                max={30}
-              />
+              {plan.transactionAuto ? (
+                <div className="field">
+                  <span className="field-label">Biaya surat-surat</span>
+                  <div className="readout">
+                    <strong>{formatCompact(current?.result.capex.transaction, 1)}</strong>
+                    <span className="muted"> ≈ {formatPercent(current?.result.capex.transactionPct)} dari harga</span>
+                  </div>
+                  <span className="field-help">BPHTB 5% × (harga − Rp80 jt) + PPAT maks. 1% + balik nama BPN</span>
+                </div>
+              ) : (
+                <NumberField
+                  label="Biaya surat-surat"
+                  unit="%"
+                  value={plan.transactionPct}
+                  onChange={set('transactionPct')}
+                  help="Pajak beli (BPHTB), notaris/PPAT"
+                  min={0}
+                  max={30}
+                />
+              )}
+              <label className="check wide">
+                <input type="checkbox" checked={!!plan.transactionAuto} onChange={(e) => set('transactionAuto')(e.target.checked)} />
+                <span>
+                  Hitung biaya surat-surat otomatis sesuai aturan Kota Malang (BPHTB Perda No. 4/2023, honor PPAT PP No. 24/2016). Matikan
+                  kalau sudah dapat angka pasti dari notaris.
+                </span>
+              </label>
             </div>
 
             {isBuild && (
@@ -255,6 +274,7 @@ export default function PlanPage() {
                     ))}
                   </div>
                   <span className="field-help">
+                    {!materialPricesVerified(data.sources) && <b className="warn-text">Harga paket masih angka contoh, belum dari RAB. </b>}
                     Pilih 2 atau lebih untuk dibandingkan. Isi & harga tiap paket diatur di menu <Link to="/material">Banding Material</Link>.
                   </span>
                 </fieldset>
@@ -301,7 +321,15 @@ export default function PlanPage() {
                 <NumberField label="Perawatan" unit="% sewa" value={plan.maintenancePct} onChange={set('maintenancePct')} help="Bisa diganti oleh paket material" min={0} max={50} />
                 <MoneyField label="PBB per tahun" value={plan.pbbYearly} onChange={set('pbbYearly')} />
                 <NumberField label="Fee pengelola" unit="% sewa" value={plan.managementPct} onChange={set('managementPct')} help="Kalau dikelola orang lain, umumnya 10–15%" min={0} max={50} />
-                <NumberField label="Pajak penghasilan sewa" unit="%" value={plan.incomeTaxPct} onChange={set('incomeTaxPct')} help="PPh final sewa 10% — tanyakan konsultan pajak" min={0} max={50} />
+                <NumberField
+                  label="Pajak penghasilan kos"
+                  unit="% sewa"
+                  value={plan.incomeTaxPct}
+                  onChange={set('incomeTaxPct')}
+                  help="Pemilik perorangan: 0 kalau sewa setahun di bawah Rp500 jt (PPh UMKM 0,5% hanya atas kelebihannya, PP 55/2022). Kos tidak kena PPh final sewa 10%."
+                  min={0}
+                  max={50}
+                />
                 {isBuild && (
                   <>
                     <NumberField label="Desain, izin (PBG), pengawasan" unit="% konstruksi" value={plan.designPct} onChange={set('designPct')} min={0} max={30} />

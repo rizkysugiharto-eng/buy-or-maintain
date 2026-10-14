@@ -8,7 +8,7 @@ const jt = (v) => Math.round(v * 1e6);
 const M = (v) => Math.round(v * 1e9);
 
 // Biaya rutin kos yang dipakai di semua rencana contoh
-const OPEX = { opexFixedMonthly: jt(1), opexPerRoomMonthly: jt(0.21), maintenancePct: 6, managementPct: 0, incomeTaxPct: 0, transactionPct: 6.5 };
+const OPEX = { opexFixedMonthly: jt(1), opexPerRoomMonthly: jt(0.21), maintenancePct: 6, managementPct: 0, incomeTaxPct: 0, transactionPct: 6.5, transactionAuto: true };
 
 export const CHECKLIST = [
   { key: 'mutasi', label: 'Bukti uang sewa: mutasi rekening 12 bulan terakhir' },
@@ -28,8 +28,8 @@ export const EXAMPLE_MATERIALS = [
     name: 'Ekonomis',
     note: 'Hebel, atap spandek, keramik 40×40. Lebih cepat dibangun, tapi lebih sering perlu perbaikan.',
     components: [
-      { id: 'c1', part: 'Struktur & pondasi', material: 'Beton bertulang standar', costPerM2: jt(1.4) },
-      { id: 'c2', part: 'Dinding', material: 'Bata ringan (hebel) + acian', costPerM2: jt(0.45) },
+      { id: 'c1', part: 'Struktur & pondasi', material: 'Beton bertulang standar', costPerM2: jt(1.45) },
+      { id: 'c2', part: 'Dinding', material: 'Bata ringan (hebel) + acian', costPerM2: jt(0.4) },
       { id: 'c3', part: 'Atap', material: 'Baja ringan + spandek', costPerM2: jt(0.35) },
       { id: 'c4', part: 'Lantai', material: 'Keramik 40×40', costPerM2: jt(0.25) },
       { id: 'c5', part: 'Plafon & cat', material: 'Plafon PVC + cat standar', costPerM2: jt(0.3) },
@@ -51,8 +51,8 @@ export const EXAMPLE_MATERIALS = [
     name: 'Standar',
     note: 'Bata merah, genteng metal, keramik 60×60. Pilihan umum kos mahasiswa.',
     components: [
-      { id: 'c1', part: 'Struktur & pondasi', material: 'Beton bertulang standar', costPerM2: jt(1.5) },
-      { id: 'c2', part: 'Dinding', material: 'Bata merah + plester', costPerM2: jt(0.6) },
+      { id: 'c1', part: 'Struktur & pondasi', material: 'Beton bertulang standar', costPerM2: jt(1.6) },
+      { id: 'c2', part: 'Dinding', material: 'Bata merah + plester', costPerM2: jt(0.5) },
       { id: 'c3', part: 'Atap', material: 'Baja ringan + genteng metal', costPerM2: jt(0.45) },
       { id: 'c4', part: 'Lantai', material: 'Keramik 60×60', costPerM2: jt(0.35) },
       { id: 'c5', part: 'Plafon & cat', material: 'Gypsum + cat standar', costPerM2: jt(0.4) },

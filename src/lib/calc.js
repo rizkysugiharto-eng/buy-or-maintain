@@ -28,6 +28,17 @@ export const DEFAULT_SETTINGS = {
   startMonth: '2026-11', // bulan mulai hitung (YYYY-MM)
   chartYears: 30,
   maxYears: 60, // batas hitung balik modal
+  // Biaya surat-surat pembeli di Kota Malang (dipakai bila rencana memilih "hitung otomatis"):
+  // BPHTB 5% × (harga − NPOPTKP Rp80 jt) — Perda Kota Malang No. 4/2023;
+  // honor PPAT maks. 1% — PP No. 24/2016; balik nama BPN ≈ harga/1000 + Rp50 rb.
+  bphtbPct: 5,
+  npoptkp: 80_000_000,
+  ppatPct: 1,
+  bpnPermil: 1,
+  bpnFee: 50_000,
+  // Pembanding hasil investasi lain (%/tahun)
+  benchmarkSbn: 6.9, // SBN ritel SR025, Agustus 2026
+  benchmarkDeposit: 3.75, // bunga penjaminan LPS bank umum, Okt 2026–Jan 2027
   scenarios: {
     optimis: { rentPct: 5, occupancyPt: 8, opexPct: 0, capexPct: 0 },
     pesimis: { rentPct: -10, occupancyPt: -12, opexPct: 15, capexPct: 15 },
@@ -53,13 +64,19 @@ export function materialCostPerM2(material) {
  * Paket material mengubah biaya bangun per m², dan bila diisi juga: isi kamar, biaya desain,
  * masa bangun (± bulan), sewa (± %), keterisian (± poin), perawatan, dan peremajaan berkala.
  */
-export function resolvePlan(plan, property, material) {
+export function resolvePlan(plan, property, material, settings = DEFAULT_SETTINGS) {
   const isBuild = plan.type === 'bangun';
   const m = isBuild ? material : null;
   return {
     type: plan.type,
     purchasePrice: num(pick(plan.purchasePrice, property?.askingPrice)),
     transactionPct: num(plan.transactionPct, 6.5),
+    transactionAuto: !!plan.transactionAuto,
+    bphtbPct: num(settings.bphtbPct, 5),
+    npoptkp: num(settings.npoptkp, 80_000_000),
+    ppatPct: num(settings.ppatPct, 1),
+    bpnPermil: num(settings.bpnPermil, 1),
+    bpnFee: num(settings.bpnFee, 50_000),
     extraCosts: (plan.extraCosts ?? []).reduce((sum, c) => sum + num(c.amount), 0),
     buildArea: isBuild ? num(plan.buildArea) : 0,
     buildCostPerM2: isBuild ? (m ? materialCostPerM2(m) : num(plan.buildCostPerM2)) : 0,
@@ -100,9 +117,20 @@ export function applyScenario(p, scenario, settings = DEFAULT_SETTINGS) {
   };
 }
 
+/**
+ * Biaya surat-surat pembeli. Mode otomatis mengikuti aturan Kota Malang:
+ * BPHTB = 5% × (harga − NPOPTKP), PPAT maks. 1% harga, balik nama BPN ≈ harga/1000 + Rp50 rb.
+ */
+export function transactionCost(p, price = p.purchasePrice) {
+  if (!p.transactionAuto) return (price * p.transactionPct) / 100;
+  if (!price) return 0;
+  const bphtb = (Math.max(0, price - p.npoptkp) * p.bphtbPct) / 100;
+  return bphtb + (price * p.ppatPct) / 100 + (price * p.bpnPermil) / 1000 + p.bpnFee;
+}
+
 // Rincian modal yang harus disiapkan
 export function capexBreakdown(p) {
-  const transaction = (p.purchasePrice * p.transactionPct) / 100;
+  const transaction = transactionCost(p);
   const construction = p.buildArea * p.buildCostPerM2;
   const furnishing = p.type === 'bangun' ? p.rooms * p.furnishingPerRoom : 0;
   const design = (construction * p.designPct) / 100;
@@ -111,6 +139,7 @@ export function capexBreakdown(p) {
   return {
     purchase: p.purchasePrice,
     transaction,
+    transactionPct: p.purchasePrice ? (transaction / p.purchasePrice) * 100 : 0,
     construction,
     furnishing,
     design,
@@ -178,7 +207,10 @@ export function maxPriceForYield(p, targetPct) {
   const { noi } = incomeBreakdown(p);
   const cap = capexBreakdown({ ...p, purchasePrice: 0 });
   if (noi <= 0 || !targetPct) return null;
-  return Math.max(0, (noi / (targetPct / 100) - cap.build) / (1 + p.transactionPct / 100));
+  // Biaya surat-surat = rate × harga + tetap (berlaku untuk harga di atas NPOPTKP)
+  const rate = p.transactionAuto ? p.bphtbPct / 100 + p.ppatPct / 100 + p.bpnPermil / 1000 : p.transactionPct / 100;
+  const fixed = p.transactionAuto ? p.bpnFee - (p.npoptkp * p.bphtbPct) / 100 : 0;
+  return Math.max(0, (noi / (targetPct / 100) - cap.build - fixed) / (1 + rate));
 }
 
 // Keterisian minimal agar biaya rutin tertutup
@@ -191,7 +223,7 @@ export function breakEvenOccupancy(p) {
 
 // Analisis lengkap satu rencana (+ satu paket material) untuk satu skenario
 export function analyze(plan, property, material, settings = DEFAULT_SETTINGS, scenario = 'moderat') {
-  const p = applyScenario(resolvePlan(plan, property, material), scenario, settings);
+  const p = applyScenario(resolvePlan(plan, property, material, settings), scenario, settings);
   const capex = capexBreakdown(p);
   const income = incomeBreakdown(p);
   const sim = simulate(p, settings);
@@ -234,7 +266,7 @@ export function costApproach(property) {
 // Kisaran harga dari sisi pendapatan: harga beli yang masih memberi hasil bersih 5,5–6%
 export function incomeApproach(plan, property, material, settings = DEFAULT_SETTINGS) {
   if (!plan) return null;
-  const p = resolvePlan(plan, property, material);
+  const p = resolvePlan(plan, property, material, settings);
   const low = maxPriceForYield(p, settings.targetYieldHigh);
   const high = maxPriceForYield(p, settings.targetYieldLow);
   return low == null || high == null ? null : { min: low, max: high };

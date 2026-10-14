@@ -6,6 +6,7 @@ import { CashflowChart, Legend, seriesVar } from '../components/Charts.jsx';
 import { MoneyField, NumberField, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
+import { materialPricesVerified } from '../data/sources.js';
 import { materialCostPerM2 } from '../lib/calc.js';
 import { formatCompact, formatMonths, formatNumber, formatYears, monthLabel } from '../lib/format.js';
 import { shortName } from '../lib/labels.js';
@@ -32,8 +33,24 @@ function diffSentence(a, b, settings) {
   return `${parts.join(', ')}.`;
 }
 
+function ExampleNotice() {
+  return (
+    <section className="card example-notice" role="note">
+      <h2>⚠ Harga material masih angka contoh</h2>
+      <p>
+        Biaya per m² tiap paket belum diambil dari RAB kontraktor atau standar harga Pemkot. Perbandingan di bawah menunjukkan <b>cara kerjanya</b>,
+        belum bisa dipakai untuk <b>memilih material</b>.
+      </p>
+      <Link className="btn small" to="/pengaturan?bagian=sumber">
+        Lihat cara dapetin angka yang benar →
+      </Link>
+    </section>
+  );
+}
+
 function Comparison({ plan }) {
   const { data, analysis, updatePlan } = useData();
+  const verified = materialPricesVerified(data.sources);
   const { settings } = data;
   const property = data.properties.find((p) => p.id === plan.propertyId);
   const variants = analysis.rows.filter((r) => r.plan.id === plan.id && r.material);
@@ -76,6 +93,7 @@ function Comparison({ plan }) {
 
       {variants.length > 0 && (
         <>
+          {!verified && <ExampleNotice />}
           <div className="variant-cards">
             {variants.map((v) => {
               const r = v.result;
@@ -86,6 +104,7 @@ function Comparison({ plan }) {
                     {v.material.name}
                   </h3>
                   <div className="tags">
+                    {!verified && <span className="badge rating-cukup">Angka contoh</span>}
                     {v.key === cheapest && <span className="badge rating-baik">Modal paling hemat</span>}
                     {v.key === fastest && <span className="badge rating-baik">Paling cepat balik modal</span>}
                     {v.key === richest && <span className="badge rating-baik">Uang bulanan terbesar</span>}
@@ -232,6 +251,7 @@ function MaterialEditor({ material, index }) {
         <strong>{material.name}</strong>
         <span className="muted">{formatCompact(materialCostPerM2(material))}/m²</span>
         <span className="small muted">{usedBy ? `dipakai ${usedBy} rencana` : 'belum dipakai'}</span>
+        {!materialPricesVerified(data.sources) && <span className="badge rating-cukup">Angka contoh</span>}
       </summary>
       <div className="form-grid">
         <TextField label="Nama paket" value={material.name} onChange={set('name')} />

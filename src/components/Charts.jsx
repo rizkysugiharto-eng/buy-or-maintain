@@ -61,10 +61,10 @@ export function HBarChart({ data, formatValue, target, targetLabel, domainMax })
   return (
     <ul className="hbars">
       {data.map((d) => (
-        <li key={d.label}>
+        <li key={d.label} className={d.reference ? 'reference' : undefined}>
           <span className="hbar-label">{d.label}</span>
           <div className="hbar-track">
-            <div className="hbar-fill" style={{ width: pct(d.value), background: seriesVar(d.colorIndex), color: seriesVar(d.colorIndex) }} />
+            <div className="hbar-fill" style={{ width: pct(d.value), background: d.color ?? seriesVar(d.colorIndex), color: d.color ?? seriesVar(d.colorIndex) }} />
             <span className="hbar-value" style={{ left: `calc(${pct(d.value)} + 8px)` }}>
               {formatValue(d.value, d)}
             </span>
@@ -94,7 +94,7 @@ export function CashflowChart({ series, years = 30 }) {
   });
   return (
     <div className="chart">
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={300} initialDimension={{ width: 760, height: 300 }}>
         <LineChart data={rows} margin={{ top: 12, right: 16, bottom: 8, left: 8 }}>
           <CartesianGrid vertical={false} stroke={colors.grid} />
           <XAxis
