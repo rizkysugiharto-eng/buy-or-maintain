@@ -115,3 +115,25 @@ describe('sumber angka per properti', () => {
     expect(propertySources({}).map((s) => s.key)).toContain('surat-surat');
   });
 });
+
+describe('tambah dari file untuk properti yang sudah ada', () => {
+  it('rencana baru ditambahkan ke properti yang sama tanpa menimpa isinya', async () => {
+    const { mergeData } = await import('./storage.js');
+    const current = exampleData();
+    current.properties[0].primaryPlanId = null;
+    current.properties[0].sources = { 'harga-tanah': { status: 'dicek' } };
+    const incoming = {
+      ...exampleData(),
+      properties: [{ ...current.properties[0], notes: 'beda', primaryPlanId: 'plan-baru', sources: { 'harga-tanah': { status: 'perkiraan' }, 'sewa-pasar': { note: 'x' } } }],
+      plans: [{ ...current.plans[0], id: 'plan-baru' }, current.plans[0]],
+    };
+    const { data, added, addedPlans } = mergeData(current, incoming);
+    expect(added).toBe(0);
+    expect(addedPlans).toBe(1);
+    const p = data.properties[0];
+    expect(p.notes).toBe(current.properties[0].notes);
+    expect(p.primaryPlanId).toBe('plan-baru');
+    expect(p.sources).toEqual({ 'harga-tanah': { status: 'dicek' }, 'sewa-pasar': { note: 'x' } });
+    expect(data.plans.filter((pl) => pl.id === current.plans[0].id)).toHaveLength(1);
+  });
+});

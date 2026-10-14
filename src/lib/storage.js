@@ -13,10 +13,7 @@ const PREFS_KEY = 'buy-or-maintain:prefs';
 
 export function isValidData(data) {
   return (
-    data &&
-    typeof data === 'object' &&
-    data.version === DATA_VERSION &&
-    ['properties', 'plans', 'materials'].every((k) => Array.isArray(data[k]))
+    data && typeof data === 'object' && data.version === DATA_VERSION && ['properties', 'plans', 'materials'].every((k) => Array.isArray(data[k]))
   );
 }
 
@@ -137,9 +134,7 @@ export function expandData(compact) {
     title: compact.t ?? '',
     properties: compact.p ?? [],
     plans: (compact.l ?? []).map((plan) => ({ extraCosts: [], ...plan })),
-    materials: (compact.m ?? [])
-      .map((m) => (typeof m === 'string' ? structuredClone(EXAMPLE_MATERIALS.find((x) => x.id === m)) : m))
-      .filter(Boolean),
+    materials: (compact.m ?? []).map((m) => (typeof m === 'string' ? structuredClone(EXAMPLE_MATERIALS.find((x) => x.id === m)) : m)).filter(Boolean),
     settings: { ...structuredClone(DEFAULT_SETTINGS), ...compact.s },
     sources: compact.k ?? {},
   };
@@ -176,8 +171,8 @@ export function downloadFile(filename, content, type = 'application/json') {
 
 /**
  * Tambahkan properti (beserta rencana & paket material yang dipakainya) dari data lain
- * tanpa mengubah data yang sudah ada. Properti yang sama persis (id & nama sama) dilewati;
- * id yang bentrok diganti supaya tidak menimpa.
+ * tanpa mengubah data yang sudah ada. Properti yang sama (id & nama sama) tidak ditimpa, tapi
+ * rencana barunya ditambahkan; id yang bentrok diganti supaya tidak menimpa.
  */
 export function mergeData(current, incoming) {
   const fresh = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -185,32 +180,42 @@ export function mergeData(current, incoming) {
   const planIds = new Set(current.plans.map((p) => p.id));
   const matIds = new Set(current.materials.map((m) => m.id));
   const properties = [];
+  const updated = new Map(); // properti lama yang mendapat rencana baru
   const plans = [];
   for (const property of incoming.properties) {
     const existing = propIds.get(property.id);
-    if (existing && existing.name === property.name) continue;
-    const id = existing ? fresh('prop') : property.id;
+    const same = existing && existing.name === property.name;
+    const id = existing && !same ? fresh('prop') : property.id;
     const idMap = new Map();
     const own = incoming.plans
-      .filter((pl) => pl.propertyId === property.id)
+      .filter((pl) => pl.propertyId === property.id && !(same && planIds.has(pl.id)))
       .map((pl) => {
         const planId = planIds.has(pl.id) ? fresh('plan') : pl.id;
         idMap.set(pl.id, planId);
         return { ...pl, id: planId, propertyId: id };
       });
-    const primaryPlanId = idMap.get(property.primaryPlanId) ?? property.primaryPlanId;
-    properties.push({ ...property, id, primaryPlanId });
     plans.push(...own);
+    if (same) {
+      if (own.length) {
+        updated.set(id, {
+          primaryPlanId: existing.primaryPlanId || idMap.get(property.primaryPlanId) || null,
+          sources: { ...property.sources, ...existing.sources },
+        });
+      }
+      continue;
+    }
+    properties.push({ ...property, id, primaryPlanId: idMap.get(property.primaryPlanId) ?? property.primaryPlanId });
   }
   const materials = incoming.materials.filter((m) => !matIds.has(m.id) && plans.some((pl) => pl.materialIds?.includes(m.id)));
   return {
     data: {
       ...current,
-      properties: [...current.properties, ...properties],
+      properties: [...current.properties.map((p) => (updated.has(p.id) ? { ...p, ...updated.get(p.id) } : p)), ...properties],
       plans: [...current.plans, ...plans],
       materials: [...current.materials, ...materials],
     },
     added: properties.length,
+    addedPlans: plans.length,
   };
 }
 

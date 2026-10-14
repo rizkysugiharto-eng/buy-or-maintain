@@ -192,13 +192,14 @@ export function DataProvider({ children }) {
       // Tambahkan properti dari file lain tanpa menghapus yang sudah ada
       mergeIn: (incoming, fileName) => {
         setData((current) => {
-          const { data: next, added } = mergeData(current, incoming);
+          const { data: next, added, addedPlans } = mergeData(current, incoming);
           saveBackup(current);
+          const parts = [added && `${added} properti`, addedPlans && `${addedPlans} rencana`].filter(Boolean);
           setNotice({
-            message: added
-              ? `${added} properti dari "${fileName}" sudah ditambahkan.`
-              : `Semua properti di "${fileName}" sudah ada — tidak ada yang ditambahkan.`,
-            canUndo: added > 0,
+            message: parts.length
+              ? `${parts.join(' dan ')} dari "${fileName}" sudah ditambahkan.`
+              : `Semua isi "${fileName}" sudah ada — tidak ada yang ditambahkan.`,
+            canUndo: parts.length > 0,
           });
           return next;
         });
