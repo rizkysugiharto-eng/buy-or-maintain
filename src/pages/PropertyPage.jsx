@@ -79,7 +79,12 @@ export default function PropertyPage() {
           <h1>{property.name}</h1>
           <p className="muted">{property.address}</p>
         </div>
-        {card.verdict && <RatingBadge rating={card.verdict.level}>Kesimpulan: {card.verdict.label}</RatingBadge>}
+        <div className="btn-row">
+          {card.verdict && <RatingBadge rating={card.verdict.level}>Kesimpulan: {card.verdict.label}</RatingBadge>}
+          <Link className="btn primary" to={`/laporan/${property.id}`}>
+            <Icon name="download" /> Laporan PDF
+          </Link>
+        </div>
       </div>
 
       <section className="card">

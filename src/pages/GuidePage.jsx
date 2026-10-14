@@ -63,7 +63,7 @@ export default function GuidePage() {
           <li>Setelah itu data tersimpan otomatis di HP/laptop ini — besok tidak perlu buka file lagi.</li>
           <li>
             <b>Ringkasan</b> tampil ringkas dulu (kesimpulan, kartu, rapor, 2 grafik). Tekan <b>Lihat detail lengkap</b> untuk semua pilihan
-            dan grafik lainnya. Tombol <b>Unduh PDF</b> menyimpan ringkasan lengkap (detail ikut) sebagai file PDF untuk dikirim lewat WhatsApp; <b>Cetak</b> untuk printer.
+            dan grafik lainnya. Di halaman tiap properti, <b>Laporan PDF</b> membuat laporan terperinci satu properti (data, harga wajar, simulasi, skenario, semua pilihan, pilihan menjual, sumber angka). Tombol <b>Unduh PDF</b> di Ringkasan menyimpan ringkasan lengkap (detail ikut) sebagai file PDF untuk dikirim lewat WhatsApp; <b>Cetak</b> untuk printer.
           </li>
         </ul>
       </Step>

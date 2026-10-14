@@ -13,6 +13,7 @@ import PlanPage from './pages/PlanPage.jsx';
 import Properties from './pages/Properties.jsx';
 import PropertyPage from './pages/PropertyPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import ReportPage from './pages/ReportPage.jsx';
 
 // Kalau halaman dibuka dari link bagikan, muat datanya lalu bersihkan alamatnya
 function SharedLinkLoader() {
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/properti" element={<Properties />} />
           <Route path="/properti/:id" element={<PropertyPage />} />
           <Route path="/rencana/:id" element={<PlanPage />} />
+          <Route path="/laporan/:id" element={<ReportPage />} />
           <Route path="/material" element={<MaterialPage />} />
           <Route path="/pengaturan" element={<SettingsPage />} />
           <Route path="/cara-pakai" element={<GuidePage />} />
