@@ -42,7 +42,7 @@ export function ShareDialog({ onClose }) {
     setTimeout(() => setCopied(false), 2500);
   }
 
-  const waText = `Ini perbandingan properti kos keluarga, tinggal buka link-nya ya:\n${url}`;
+  const waText = `Ini perbandingan properti keluarga, tinggal buka link-nya ya:\n${url}`;
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick={(e) => e.stopPropagation()}>
@@ -99,7 +99,7 @@ export default function Layout({ children }) {
             </span>
             <span>
               <span className="brand-title">Beli atau Rawat?</span>
-              <span className="brand-sub">{data.title || 'Perbandingan properti kos keluarga'}</span>
+              <span className="brand-sub">{data.title || 'Perbandingan properti keluarga'}</span>
             </span>
           </Link>
           <div className="header-tools">

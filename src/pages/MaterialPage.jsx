@@ -6,11 +6,11 @@ import { CashflowChart, Legend, seriesVar } from '../components/Charts.jsx';
 import { MoneyField, NumberField, TextField } from '../components/Fields.jsx';
 import Icon from '../components/Icon.jsx';
 import { useData } from '../context/DataContext.jsx';
-import { RAB_ITEMS, RAB_PER_M2, RAB_SOURCES } from '../data/rab.js';
+import { CEILING_RATIO, RAB3_AREA, RAB3_ITEMS, RAB3_LABOR, RAB3_TOTAL, RAB_ITEMS, RAB_PER_M2, RAB_SOURCES, WALL_RATIO } from '../data/rab.js';
 import { SHS_ITEMS, SHS_PER_M2, SHS_SOURCE, SHS_TUKANG_RANGE } from '../data/shs.js';
 import { materialPricesVerified } from '../data/sources.js';
 import { materialCostPerM2 } from '../lib/calc.js';
-import { formatCompact, formatMonths, formatNumber, formatRupiah, formatYears, monthLabel } from '../lib/format.js';
+import { formatCompact, formatMonths, formatNumber, formatPercent, formatRupiah, formatYears, monthLabel } from '../lib/format.js';
 import { shortName } from '../lib/labels.js';
 
 const signed = (v, unit = '') => (v ? `${v > 0 ? '+' : ''}${formatNumber(v, v % 1 ? 1 : 0)}${unit}` : '–');
@@ -311,18 +311,65 @@ function MaterialEditor({ material, index }) {
   );
 }
 
-// Pembanding: harga satuan dari RAB nyata di Kota Malang vs komponen paket material
+// Pembanding: harga dari RAB nyata di Kota Malang vs komponen paket material
 function RabReference({ materials }) {
   const partCost = (m, part) => m.components?.find((c) => c.part === part)?.costPerM2;
   const shown = materials.slice(0, 4);
+  const laborPerM2 = RAB3_TOTAL / RAB3_AREA;
+  const ref = materials.find((m) => m.name === 'Standar') ?? materials[0];
+  const refTotal = ref ? materialCostPerM2(ref) : 0;
   return (
     <details className="card details-card rab-ref">
-      <summary>Pembanding: harga satuan dari RAB Malang yang kamu kirim</summary>
+      <summary>Pembanding: RAB Malang yang kamu kirim</summary>
       <p className="small muted">
-        Dua RAB nyata di Kota Malang: {RAB_SOURCES.rab1}; {RAB_SOURCES.rab2}. Keduanya pekerjaan renovasi/finishing, bukan bangun kos dari
-        nol — jadi struktur & pondasi belum bisa dicek dari sini.
+        Tiga RAB nyata di Kota Malang: {RAB_SOURCES.rab3}; {RAB_SOURCES.rab1}; {RAB_SOURCES.rab2}.
       </p>
-      <h3>Perkiraan per m² luas bangunan</h3>
+
+      <h3>Upah kerja per m² — RAB kos 5 lantai (terbaru)</h3>
+      <div className="table-wrap">
+        <table className="table numbers compact">
+          <thead>
+            <tr>
+              <th>Komponen</th>
+              <th>Upah saja</th>
+              {shown.map((m) => (
+                <th key={m.id}>Paket {m.name} (bahan + upah)</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {RAB3_LABOR.map((r) => (
+              <tr key={r.part}>
+                <th scope="row">
+                  {r.part}
+                  <div className="small muted text-cell">{r.how}</div>
+                </th>
+                <td>{formatCompact(r.amount / RAB3_AREA)}</td>
+                {shown.map((m) => (
+                  <td key={m.id}>{partCost(m, r.part) != null ? formatCompact(partCost(m, r.part)) : '–'}</td>
+                ))}
+              </tr>
+            ))}
+            <tr className="total">
+              <th scope="row">Total per m²</th>
+              <td>{formatCompact(laborPerM2)}</td>
+              {shown.map((m) => (
+                <td key={m.id}>{formatCompact(materialCostPerM2(m))}</td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {ref && refTotal > laborPerM2 && (
+        <p className="meaning">
+          <b>Artinya:</b> upah tukang untuk kos 5 lantai ±{formatCompact(laborPerM2)} per m² ({formatCompact(RAB3_TOTAL, 2)} untuk{' '}
+          {formatNumber(RAB3_AREA)} m²). Kalau paket {ref.name} {formatCompact(refTotal)}/m², sisanya ±{formatCompact(refTotal - laborPerM2)}/m² (
+          {formatPercent(((refTotal - laborPerM2) / refTotal) * 100, 0)}) untuk bahan. Minta RAB bahannya juga supaya totalnya bisa dicek
+          penuh.
+        </p>
+      )}
+
+      <h3>Perkiraan bahan + upah per m² luas bangunan</h3>
       <div className="table-wrap">
         <table className="table numbers compact">
           <thead>
@@ -351,17 +398,44 @@ function RabReference({ materials }) {
         </table>
       </div>
       <p className="meaning">
-        <b>Artinya:</b> kalau angka paket jauh di atas angka RAB, komponen itu kemungkinan terlalu mahal di paket — sesuaikan setelah dapat RAB
-        bangun kos lengkap. Rasio 1,2 m² dinding per m² lantai adalah perkiraan untuk kos bersekat kamar.
+        <b>Artinya:</b> harga satuan dari RAB renovasi & finishing, dikali banyaknya dinding dan plafon per m² lantai pada kos 5 lantai
+        (±{formatNumber(WALL_RATIO, 1)} m² dinding dan ±{formatNumber(CEILING_RATIO, 2)} m² plafon per m² lantai). Kalau angka paket jauh di
+        luar rentang ini, komponen itu perlu dicek lagi.
       </p>
-      <h3>Harga satuan pekerjaan (bahan + upah)</h3>
+
+      <h3>Upah per satuan pekerjaan (RAB kos 5 lantai)</h3>
+      <div className="table-wrap">
+        <table className="table numbers compact">
+          <thead>
+            <tr>
+              <th>Pekerjaan</th>
+              <th>Upah</th>
+            </tr>
+          </thead>
+          <tbody>
+            {RAB3_ITEMS.map((it) => (
+              <tr key={it.item}>
+                <th scope="row">
+                  {it.item}
+                  <div className="small muted">{it.part}</div>
+                </th>
+                <td>
+                  {formatRupiah(it.price)}
+                  <div className="small muted">per {it.unit}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Harga satuan pekerjaan (bahan + upah, RAB lama)</h3>
       <div className="table-wrap">
         <table className="table numbers compact">
           <thead>
             <tr>
               <th>Pekerjaan</th>
               <th>Harga</th>
-              <th>Sumber</th>
             </tr>
           </thead>
           <tbody>
@@ -369,12 +443,14 @@ function RabReference({ materials }) {
               <tr key={it.item}>
                 <th scope="row">
                   {it.item}
-                  <div className="small muted">{it.part}</div>
+                  <div className="small muted">
+                    {it.part} · {it.src === 'rab1' ? 'RAB-1 Sawojajar' : 'RAB-2 2019'}
+                  </div>
                 </th>
                 <td>
-                  {formatRupiah(it.price)} / {it.unit}
+                  {formatRupiah(it.price)}
+                  <div className="small muted">per {it.unit}</div>
                 </td>
-                <td className="text-cell small muted">{it.src === 'rab1' ? 'RAB-1 Sawojajar' : 'RAB-2 2019'}</td>
               </tr>
             ))}
           </tbody>

@@ -221,7 +221,7 @@ export default function SettingsPage() {
       <section className="card">
         <h2>Bagikan & simpan</h2>
         <div className="form-grid">
-          <TextField label="Judul perbandingan" value={data.title} onChange={setTitle} placeholder="Misal: Pilihan kos Malang, Oktober 2026" wide />
+          <TextField label="Judul perbandingan" value={data.title} onChange={setTitle} placeholder="Misal: Rencana properti keluarga" wide />
         </div>
         <div className="action-grid">
           <button type="button" className="action" onClick={() => setSharing(true)}>

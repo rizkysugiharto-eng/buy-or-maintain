@@ -50,3 +50,11 @@ describe('link bagikan', () => {
     await expect(decodeShare('bukan-data')).rejects.toThrow();
   });
 });
+
+describe('judul umum', () => {
+  it('judul lama "Pilihan kos Malang" diganti judul umum', async () => {
+    const { normalizeData, GENERAL_TITLE } = await import('./storage.js');
+    expect(normalizeData({ title: 'Pilihan kos Malang · Oktober 2026', settings: {} }).title).toBe(GENERAL_TITLE);
+    expect(normalizeData({ title: 'Kos Blitar', settings: {} }).title).toBe('Kos Blitar');
+  });
+});

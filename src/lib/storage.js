@@ -20,9 +20,14 @@ export function isValidData(data) {
 }
 
 // Lengkapi pengaturan yang belum ada (mis. data dari versi lama)
+// Judul lama yang hanya menyebut kos Malang diganti judul umum (properti bisa di daerah lain)
+const OLD_TITLES = /^pilihan kos malang/i;
+export const GENERAL_TITLE = 'Rencana properti keluarga';
+
 export function normalizeData(data) {
   return {
     ...data,
+    ...(OLD_TITLES.test(data.title ?? '') && { title: GENERAL_TITLE }),
     sources: data.sources ?? {},
     settings: {
       ...DEFAULT_SETTINGS,

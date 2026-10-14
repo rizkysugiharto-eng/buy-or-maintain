@@ -91,7 +91,7 @@ export const SOURCES = [
     key: 'biaya-bangun',
     label: 'Biaya bangun per m² (Ekonomis / Standar / Premium)',
     usedIn: 'Paket material',
-    now: 'Rp4,0 / 4,8 / 6,0 jt/m². Sesuai kisaran kontraktor Malang (ekonomis Rp3–3,5 jt, standar Rp3,5–5 jt/m², 2025) dan perkiraan kos 2026 Rp5,5–6,5 jt/m² (Jakarta). Batas atas acuan pemerintah HSBGN Kota Malang (Pergub Jatim 34/2022): Rp6,48 jt/m² (≤2 lantai) dan Rp8,62 jt/m² (>2 lantai)',
+    now: 'Rp4,0 / 4,8 / 6,0 jt/m². Upah kerja saja di RAB kos 5 lantai Sigura-gura ±Rp1,24 jt/m² (sisanya bahan). Sesuai kisaran kontraktor Malang (ekonomis Rp3–3,5 jt, standar Rp3,5–5 jt/m², 2025) dan perkiraan kos 2026 Rp5,5–6,5 jt/m² (Jakarta). Batas atas acuan pemerintah HSBGN Kota Malang (Pergub Jatim 34/2022): Rp6,48 jt/m² (≤2 lantai) dan Rp8,62 jt/m² (>2 lantai)',
     verify: '2–3 RAB tertulis dari kontraktor lokal; harga bahan & upahnya dicek ke Perwal Kota Malang 14/2025',
     where: 'Banding Material → komponen tiap paket (total = biaya per m²)',
     how: [
@@ -110,7 +110,7 @@ export const SOURCES = [
     key: 'komponen-material',
     label: 'Rincian harga per komponen material',
     usedIn: 'Banding Material',
-    now: 'Perkiraan — pembagian dicocokkan ke rentang persentase pekerjaan standar PU (pondasi 5–10%, struktur 25–35%, lantai 5–10%, dinding 7–10%, plafon 6–8%, atap 8–10%). Pembanding: 2 RAB Malang dan harga resmi bahan & upah Perwal Kota Malang 14/2025 (mis. hebel 10 cm Rp8.550/buah, semen 40 kg Rp68.350, pekerja Rp153.300/hari). Belum dari RAB bangun kos lengkap',
+    now: 'Perkiraan — pembagian dicocokkan ke rentang persentase pekerjaan standar PU (pondasi 5–10%, struktur 25–35%, lantai 5–10%, dinding 7–10%, plafon 6–8%, atap 8–10%). Pembanding: RAB upah kerja kos 5 lantai 50 kamar di Sigura-gura (upah ±Rp1,24 jt/m², 1.200 m²), 2 RAB Malang lain (bahan + upah), dan harga resmi bahan & upah Perwal Kota Malang 14/2025 (mis. hebel 10 cm Rp8.550/buah, semen 40 kg Rp68.350, pekerja Rp153.300/hari). Rincian bahan kos baru belum ada',
     verify: 'RAB kontraktor per pekerjaan (biaya ÷ luas bangunan); acuan AHSP Permen PUPR No. 1/2022',
     where: 'Banding Material → Daftar paket material → komponen',
     how: [

@@ -1,4 +1,4 @@
-# Beli atau Rawat? — Perbandingan Properti Kos Keluarga
+# Beli atau Rawat? — Perbandingan Properti Keluarga
 
 Alat bantu keluarga untuk menimbang **beli jadi, renovasi, atau bangun baru** sebuah properti kos:
 berapa modal yang harus disiapkan, berapa uang bersih per bulan, dan kapan modal kembali.
